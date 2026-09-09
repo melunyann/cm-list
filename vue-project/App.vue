@@ -83,6 +83,9 @@ export default {
     totalCount(){
       return this.entries.length;
     },
+    totalDeliveredCount(){
+      return this.entries.filter(e => e.status === 2).length;
+    },
     revenueByYear(){
       const map = {};
       this.entries.forEach(e => {
@@ -227,6 +230,10 @@ export default {
         <div class="stat">
           <div class="label">総合の実績数</div>
           <div class="value">{{ totalCount }}件</div>
+        </div>
+        <div class="stat">
+          <div class="label">合計の納品件数</div>
+          <div class="value">{{ totalDeliveredCount }}件</div>
         </div>
       </div>
 
