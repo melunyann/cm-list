@@ -80,6 +80,9 @@ export default {
     totalRevenue(){
       return this.entries.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     },
+    totalCount(){
+      return this.entries.length;
+    },
     revenueByYear(){
       const map = {};
       this.entries.forEach(e => {
@@ -220,6 +223,10 @@ export default {
         <div class="stat">
           <div class="label">全体の売上</div>
           <div class="value">¥{{ totalRevenue.toLocaleString('ja-JP') }}</div>
+        </div>
+        <div class="stat">
+          <div class="label">総合の実績数</div>
+          <div class="value">{{ totalCount }}件</div>
         </div>
       </div>
 
