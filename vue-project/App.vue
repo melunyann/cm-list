@@ -30,11 +30,11 @@ export default {
 
   computed: {
     activeCount(){
-      return this.entries.filter(e => e.status !== 2).length;
+      return this.entries.filter(e => e.status === 1).length;
     },
     activeList(){
       return this.entries
-        .filter(e => e.status !== 2)
+        .filter(e => e.status === 1)
         .sort((a, b) => (a.deadline || '').localeCompare(b.deadline || ''));
     },
     unpaidCount(){
@@ -91,7 +91,9 @@ export default {
       return this.entries.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     },
     totalCount(){
-      return this.entries.reduce((sum, e) => sum + (Number(e.qty) || 1), 0);
+      return this.entries
+        .filter(e => e.status === 2)
+        .reduce((sum, e) => sum + (Number(e.qty) || 1), 0);
     },
     revenueByYear(){
       const map = {};
@@ -215,7 +217,7 @@ export default {
     <section v-show="view==='dashboard'">
       <div class="stat-grid">
         <div class="stat">
-          <div class="label">現在の受注数</div>
+          <div class="label">作業中の数</div>
           <div class="value">{{ activeCount }}件</div>
         </div>
         <div class="stat">
@@ -241,14 +243,14 @@ export default {
       </div>
 
       <div class="dash-section">
-        <h3>現在の受注</h3>
+        <h3>作業中の案件</h3>
         <ul class="mini-list" v-if="activeList.length">
           <li v-for="e in activeList" :key="e.id" @click="openDetail(e.id)">
             <span>{{ e.client }}（{{ e.plan || e.content }}）</span>
             <span class="deadline">{{ STATUS_LABELS[e.status] }}</span>
           </li>
         </ul>
-        <p class="dash-empty" v-else>現在進行中の案件はありません。</p>
+        <p class="dash-empty" v-else>現在作業中の案件はありません。</p>
       </div>
 
       <div class="dash-section">
