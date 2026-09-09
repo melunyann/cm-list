@@ -8,7 +8,8 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "vue": "latest"
+    "vue": "latest",
+    "jspdf": "^2.5.1"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.8",
