@@ -233,7 +233,7 @@ export default {
           <div class="value">{{ unpaidCount }}件</div>
         </div>
         <div class="stat accent">
-          <div class="label">納期が近い案件（7日以内）</div>
+          <div class="label">納期が近い案件</div>
           <div class="value">{{ dueSoonList.length }}件</div>
         </div>
         <div class="stat">
@@ -246,16 +246,6 @@ export default {
         </div>
       </div>
 
-      <div class="dash-section">
-        <h3>作業中の案件</h3>
-        <ul class="mini-list" v-if="activeList.length">
-          <li v-for="e in activeList" :key="e.id" @click="openDetail(e.id)">
-            <span>{{ e.client }}（{{ e.plan || e.content }}）</span>
-            <span class="deadline">{{ STATUS_LABELS[e.status] }}</span>
-          </li>
-        </ul>
-        <p class="dash-empty" v-else>現在作業中の案件はありません。</p>
-      </div>
 
       <div class="dash-section">
         <h3>納期が近い案件</h3>
@@ -277,6 +267,17 @@ export default {
           </li>
         </ul>
         <p class="dash-empty" v-else>今月が納期の案件はありません。</p>
+      </div>
+
+            <div class="dash-section">
+        <h3>作業中の案件</h3>
+        <ul class="mini-list" v-if="activeList.length">
+          <li v-for="e in activeList" :key="e.id" @click="openDetail(e.id)">
+            <span>{{ e.client }}（{{ e.plan || e.content }}）</span>
+            <span class="deadline">{{ STATUS_LABELS[e.status] }}</span>
+          </li>
+        </ul>
+        <p class="dash-empty" v-else>現在作業中の案件はありません。</p>
       </div>
 
       <div class="dash-section">
