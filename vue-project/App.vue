@@ -32,6 +32,11 @@ export default {
     activeCount(){
       return this.entries.filter(e => e.status !== 2).length;
     },
+    activeList(){
+      return this.entries
+        .filter(e => e.status !== 2)
+        .sort((a, b) => (a.deadline || '').localeCompare(b.deadline || ''));
+    },
     unpaidCount(){
       return this.entries.filter(e => !e.paid).length;
     },
@@ -51,6 +56,11 @@ export default {
           return d >= today && d <= soon;
         })
         .sort((a, b) => a.deadline.localeCompare(b.deadline));
+    },
+    unpaidList(){
+      return this.entries
+        .filter(e => !e.paid)
+        .sort((a, b) => (a.deadline || '').localeCompare(b.deadline || ''));
     },
     filteredEntries(){
       return this.entries.filter(e => {
@@ -81,10 +91,12 @@ export default {
       return this.entries.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     },
     totalCount(){
-      return this.entries.length;
+      return this.entries.reduce((sum, e) => sum + (Number(e.qty) || 1), 0);
     },
     totalDeliveredCount(){
-      return this.entries.filter(e => e.status === 2).length;
+      return this.entries
+        .filter(e => e.status === 2)
+        .reduce((sum, e) => sum + (Number(e.qty) || 1), 0);
     },
     revenueByYear(){
       const map = {};
@@ -238,6 +250,17 @@ export default {
       </div>
 
       <div class="dash-section">
+        <h3>現在の受注</h3>
+        <ul class="mini-list" v-if="activeList.length">
+          <li v-for="e in activeList" :key="e.id" @click="openDetail(e.id)">
+            <span>{{ e.client }}（{{ e.plan || e.content }}）</span>
+            <span class="deadline">{{ STATUS_LABELS[e.status] }}</span>
+          </li>
+        </ul>
+        <p class="dash-empty" v-else>現在進行中の案件はありません。</p>
+      </div>
+
+      <div class="dash-section">
         <h3>納期が近い案件</h3>
         <ul class="mini-list" v-if="dueSoonList.length">
           <li v-for="e in dueSoonList" :key="e.id" @click="openDetail(e.id)">
@@ -257,6 +280,17 @@ export default {
           </li>
         </ul>
         <p class="dash-empty" v-else>今月が納期の案件はありません。</p>
+      </div>
+
+      <div class="dash-section">
+        <h3>支払い待ちの案件</h3>
+        <ul class="mini-list" v-if="unpaidList.length">
+          <li v-for="e in unpaidList" :key="e.id" @click="openDetail(e.id)">
+            <span>{{ e.client }}（{{ e.plan || e.content }}）</span>
+            <span class="deadline">¥{{ e.amount.toLocaleString('ja-JP') }}</span>
+          </li>
+        </ul>
+        <p class="dash-empty" v-else>支払い待ちの案件はありません。</p>
       </div>
 
       <div class="dash-section">
