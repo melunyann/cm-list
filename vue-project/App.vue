@@ -1,4 +1,6 @@
 <script>
+import DocumentTool from './DocumentTool.vue'
+
 const STORAGE_KEY = 'juchu_daichou_vue_v1';
 const STATUS_LABELS = ['受注', '作業中', '納品済'];
 
@@ -17,6 +19,7 @@ function blankForm(){
 }
 
 export default {
+  components: { DocumentTool },
   data(){
     return {
       view: 'dashboard',
@@ -206,6 +209,7 @@ export default {
       <nav class="tabs">
         <button :class="{active: view==='dashboard'}" @click="view='dashboard'">ダッシュボード</button>
         <button :class="{active: view==='list'}" @click="view='list'">受注一覧</button>
+        <button :class="{active: view==='doc'}" @click="view='doc'">見積書・請求書</button>
       </nav>
       <div class="backup-actions">
         <button @click="exportJSON">JSON書き出し</button>
@@ -349,6 +353,11 @@ export default {
         </table>
       </div>
       <p class="empty" v-else>まだ記帳がありません。「＋ 新規記帳」から最初の依頼を記帳しましょう。</p>
+    </section>
+
+    <!-- ============ Document tool ============ -->
+    <section v-show="view==='doc'">
+      <DocumentTool v-if="view==='doc'" />
     </section>
 
     <!-- ============ Detail / edit ============ -->
