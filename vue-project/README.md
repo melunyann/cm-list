@@ -1,5 +1,3 @@
-# Vite Vue Starter
-
 This is a project template using [Vite](https://vitejs.dev/). It requires [Node.js](https://nodejs.org) version 20.19+ or 22.12+.
 
 To start:
