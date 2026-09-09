@@ -1,4 +1,6 @@
 <script>
+import DocumentTool from './DocumentTool.vue'
+
 const STORAGE_KEY = 'juchu_daichou_vue_v1';
 const STATUS_LABELS = ['受注', '作業中', '納品済'];
 
@@ -17,20 +19,26 @@ function blankForm(){
 }
 
 export default {
+  components: { DocumentTool },
   data(){
     return {
       view: 'dashboard',
       entries: [],
       editingId: null,
       form: blankForm(),
-      listFilter: { search: '', status: 'all', paid: 'all' },
+      listFilter: { search: '', status: 'all', paid: 'all', year: 'all', plan: 'all' },
       STATUS_LABELS
     };
   },
 
   computed: {
     activeCount(){
-      return this.entries.filter(e => e.status !== 2).length;
+      return this.entries.filter(e => e.status === 1).length;
+    },
+    activeList(){
+      return this.entries
+        .filter(e => e.status === 1)
+        .sort((a, b) => (a.deadline || '').localeCompare(b.deadline || ''));
     },
     unpaidCount(){
       return this.entries.filter(e => !e.paid).length;
@@ -52,17 +60,53 @@ export default {
         })
         .sort((a, b) => a.deadline.localeCompare(b.deadline));
     },
+    unpaidList(){
+      return this.entries
+        .filter(e => !e.paid)
+        .sort((a, b) => (a.deadline || '').localeCompare(b.deadline || ''));
+    },
     filteredEntries(){
       return this.entries.filter(e => {
         if(this.listFilter.status !== 'all' && String(e.status) !== this.listFilter.status) return false;
         if(this.listFilter.paid === 'paid' && !e.paid) return false;
         if(this.listFilter.paid === 'unpaid' && e.paid) return false;
+        if(this.listFilter.year !== 'all' && (e.date || '').slice(0, 4) !== this.listFilter.year) return false;
+        if(this.listFilter.plan !== 'all' && (e.plan || '') !== this.listFilter.plan) return false;
         if(this.listFilter.search){
           const q = this.listFilter.search.toLowerCase();
           if(!e.client.toLowerCase().includes(q) && !(e.content || '').toLowerCase().includes(q)) return false;
         }
         return true;
       }).sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));
+    },
+    yearOptions(){
+      const years = new Set(this.entries.map(e => (e.date || '').slice(0, 4)).filter(Boolean));
+      return Array.from(years).sort((a, b) => b.localeCompare(a));
+    },
+    planOptions(){
+      const plans = new Set(this.entries.map(e => e.plan).filter(Boolean));
+      return Array.from(plans).sort();
+    },
+    filteredRevenue(){
+      return this.filteredEntries.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    },
+    totalRevenue(){
+      return this.entries.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    },
+    totalCount(){
+      return this.entries
+        .filter(e => e.status === 2)
+        .reduce((sum, e) => sum + (Number(e.qty) || 1), 0);
+    },
+    revenueByYear(){
+      const map = {};
+      this.entries.forEach(e => {
+        const y = (e.date || '').slice(0, 4) || '不明';
+        map[y] = (map[y] || 0) + (Number(e.amount) || 0);
+      });
+      return Object.entries(map)
+        .sort((a, b) => b[0].localeCompare(a[0]))
+        .map(([year, total]) => ({ year, total }));
     }
   },
 
@@ -165,6 +209,7 @@ export default {
       <nav class="tabs">
         <button :class="{active: view==='dashboard'}" @click="view='dashboard'">ダッシュボード</button>
         <button :class="{active: view==='list'}" @click="view='list'">受注一覧</button>
+        <button :class="{active: view==='doc'}" @click="view='doc'">見積書・請求書</button>
       </nav>
       <div class="backup-actions">
         <button @click="exportJSON">JSON書き出し</button>
@@ -176,7 +221,7 @@ export default {
     <section v-show="view==='dashboard'">
       <div class="stat-grid">
         <div class="stat">
-          <div class="label">現在の受注数</div>
+          <div class="label">作業中の数</div>
           <div class="value">{{ activeCount }}件</div>
         </div>
         <div class="stat">
@@ -191,6 +236,25 @@ export default {
           <div class="label">納期が近い案件（7日以内）</div>
           <div class="value">{{ dueSoonList.length }}件</div>
         </div>
+        <div class="stat">
+          <div class="label">全体の売上</div>
+          <div class="value">¥{{ totalRevenue.toLocaleString('ja-JP') }}</div>
+        </div>
+        <div class="stat">
+          <div class="label">総合の実績数</div>
+          <div class="value">{{ totalCount }}件</div>
+        </div>
+      </div>
+
+      <div class="dash-section">
+        <h3>作業中の案件</h3>
+        <ul class="mini-list" v-if="activeList.length">
+          <li v-for="e in activeList" :key="e.id" @click="openDetail(e.id)">
+            <span>{{ e.client }}（{{ e.plan || e.content }}）</span>
+            <span class="deadline">{{ STATUS_LABELS[e.status] }}</span>
+          </li>
+        </ul>
+        <p class="dash-empty" v-else>現在作業中の案件はありません。</p>
       </div>
 
       <div class="dash-section">
@@ -214,6 +278,28 @@ export default {
         </ul>
         <p class="dash-empty" v-else>今月が納期の案件はありません。</p>
       </div>
+
+      <div class="dash-section">
+        <h3>支払い待ちの案件</h3>
+        <ul class="mini-list" v-if="unpaidList.length">
+          <li v-for="e in unpaidList" :key="e.id" @click="openDetail(e.id)">
+            <span>{{ e.client }}（{{ e.plan || e.content }}）</span>
+            <span class="deadline">¥{{ e.amount.toLocaleString('ja-JP') }}</span>
+          </li>
+        </ul>
+        <p class="dash-empty" v-else>支払い待ちの案件はありません。</p>
+      </div>
+
+      <div class="dash-section">
+        <h3>年別売上</h3>
+        <ul class="mini-list" v-if="revenueByYear.length">
+          <li v-for="r in revenueByYear" :key="r.year">
+            <span>{{ r.year }}年</span>
+            <span class="deadline">¥{{ r.total.toLocaleString('ja-JP') }}</span>
+          </li>
+        </ul>
+        <p class="dash-empty" v-else>まだ売上データがありません。</p>
+      </div>
     </section>
 
     <!-- ============ List ============ -->
@@ -232,6 +318,18 @@ export default {
           <option value="paid">支払い済み</option>
           <option value="unpaid">未払い</option>
         </select>
+        <select v-model="listFilter.year">
+          <option value="all">すべての年</option>
+          <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}年</option>
+        </select>
+        <select v-model="listFilter.plan">
+          <option value="all">すべてのプラン</option>
+          <option v-for="p in planOptions" :key="p" :value="p">{{ p }}</option>
+        </select>
+      </div>
+
+      <div class="filtered-summary" v-if="filteredEntries.length">
+        絞り込み結果：{{ filteredEntries.length }}件／売上合計 <strong>¥{{ filteredRevenue.toLocaleString('ja-JP') }}</strong>
       </div>
 
       <div class="table-wrap" v-if="filteredEntries.length">
@@ -255,6 +353,11 @@ export default {
         </table>
       </div>
       <p class="empty" v-else>まだ記帳がありません。「＋ 新規記帳」から最初の依頼を記帳しましょう。</p>
+    </section>
+
+    <!-- ============ Document tool ============ -->
+    <section v-show="view==='doc'">
+      <DocumentTool v-if="view==='doc'" />
     </section>
 
     <!-- ============ Detail / edit ============ -->
@@ -430,6 +533,11 @@ button{ font-family: inherit; }
   border: 1px solid var(--ls); border-radius: var(--rd); background: var(--cd); color: var(--ik);
 }
 .list-toolbar input[type=text]{ flex:1; min-width: 160px; }
+
+.filtered-summary{
+  font-size: 12.5px; color: var(--is); margin: -4px 0 12px; padding: 0 2px;
+}
+.filtered-summary strong{ color: var(--ac); font-family: 'JetBrains Mono', monospace; }
 
 .btn-primary{
   background: var(--ik); color: #fff; border: none; padding: 9px 18px;
