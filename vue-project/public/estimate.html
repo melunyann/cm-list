@@ -58,10 +58,6 @@
   .choice-btn.selected .price{ color: var(--ac); }
   .choice-btn:hover{ border-color: var(--ac); }
 
-  .choice-note{ white-space: pre-wrap; line-height: 1.5; }
-  .choice-btn .choice-text{ min-width: 0; }
-
-
   /* ---- アコーディオン（オプション） ---- */
   .accordion{ border: 1px solid var(--ls); border-radius: var(--rd); overflow: hidden; }
   .accordion + .accordion{ margin-top: 8px; }
@@ -190,11 +186,8 @@
               v-for="it in g.items" :key="it.id"
               class="choice-btn" :class="{selected: form.optionIds.includes(it.id)}"
               @click="toggleOption(it.id)">
-              <span class="choice-text">
-                <span>{{ it.name }}</span>
-                <span class="choice-note" v-if="it.note">{{ it.note }}</span>
-              </span>
-              <span class="price">{{ optionPriceLabel(it) }}</span>
+              <span>{{ it.name }}</span>
+              <span class="price">+¥{{ it.price.toLocaleString('ja-JP') }}</span>
             </button>
           </template>
 
@@ -290,22 +283,9 @@ const OPTION_GROUPS = [
   {
     id: 'production',
     label: '制作オプション',
-    hasQty: false,
+    hasQty: true,
     items: [
-      { id: 'extra_person', name: '人物追加（基本料金の100％）', type: 'percent_base', rate: 1 },
-      { id: 'small_item_diff', name: '小物差分', type: 'fixed_from', price: 500 },
-      { id: 'expression_diff', name: '表情差分', type: 'fixed', price: 1500 },
-      { id: 'costume_diff', name: '衣装差分（要相談）', type: 'consult' },
-      { id: 'complex_item', name: '複雑な小物・装飾', type: 'fixed_from', price: 800,
-        note: '細かい模様やレース・フリル、和服など' },
-      { id: 'complex_bg', name: '複雑な背景', type: 'fixed_from', price: 2000,
-        note: '描き込みのある背景' },
-      { id: 'high_res', name: '高解像度化', type: 'fixed_from', price: 1000,
-        note: '最短辺2,500pxを超える大きさでデータを制作する場合に適用。活動者様は用途により追加料金なし' },
-      { id: 'psd', name: 'PSD納品', type: 'fixed_from', price: 2000,
-        note: 'レイヤー未統合（PSD）データでの納品。人物同士の重なり部分や、背景の隠れている部分まで描写する必要がある場合など。著作権の譲渡は含まれません。' },
-      { id: 'imitation', name: 'イメレス指定', type: 'fixed_from', price: 1500,
-        note: '商用フリーのイメレスやトレス素材の構図での制作時に適用。通常の構図指定には適用されません。' }
+      { id: 'extra_format', name: 'データ形式追加（PSD/AIなど）', price: 1000 },
     ]
   },
   {
@@ -313,12 +293,7 @@ const OPTION_GROUPS = [
     label: '利用オプション',
     hasQty: false,
     items: [
-      { id: 'private', name: '実績非公開', type: 'fixed_from', price: 1500,
-        note: 'SNS等への実績公開をご希望されない場合に適用。顔隠し・ぼかし・トリミング等の条件付き公開も実績非公開案件として扱います。' },
-      { id: 'commercial', name: '商用利用', type: 'fixed_from', price: 3000,
-        note: '収益化サイト、動画・配信用サムネイルへの利用など。利用範囲により金額が異なります。' },
-      { id: 'gift', name: 'プレゼント用途（要相談）', type: 'consult',
-        note: '活動者様へのプレゼントを目的としたご依頼。内容により追加料金が発生する場合があります。' }
+      { id: 'commercial', name: '商用利用ライセンス', price: 3000 },
     ]
   },
   {
@@ -326,12 +301,7 @@ const OPTION_GROUPS = [
     label: '短納期対応',
     hasQty: false,
     items: [
-      { id: 'rush_3', name: '即日～3日以内', type: 'percent_total', rate: 1.5,
-        note: '合計金額の150％～要相談。全てお支払い後からの換算です。' },
-      { id: 'rush_7', name: '～7日以内', type: 'percent_total', rate: 1,
-        note: '合計金額の100％～。全てお支払い後からの換算です。' },
-      { id: 'rush_other', name: 'その他日数（要相談）', type: 'consult',
-        note: '全てお支払い後からの換算です。' }
+      { id: 'rush', name: '特急対応（3日以内）', price: 2000 },
     ]
   }
 ];
@@ -382,43 +352,25 @@ createApp({
       if(this.selectedPlan) items.push({ name: this.selectedPlan.name, price: this.selectedPlan.price });
 
       this.optionGroups.forEach(g => {
-        g.items.forEach(it => {
-          if(!this.form.optionIds.includes(it.id)) return;
-
-          if(it.type === 'consult') {
-            items.push({ name: it.name, price: 0, consult: true });
-          } else {
-            items.push({ name: it.name, price: this.optionPrice(it), option: true });
-          }
-        });
+        if(g.hasQty){
+          g.items.forEach(it => {
+            const qty = this.form.optionQty[it.id] || 0;
+            if(qty > 0) items.push({ name: `${it.name} ×${qty}`, price: it.price * qty });
+          });
+        }else{
+          g.items.forEach(it => {
+            if(this.form.optionIds.includes(it.id)) items.push({ name: it.name, price: it.price });
+          });
+        }
       });
 
       return items;
-    },,
+    },
     total(){
       return this.lineItems.reduce((sum, it) => sum + it.price, 0);
     }
   },
   methods: {
-    optionPrice(it){
-      const base = this.selectedPlan ? this.selectedPlan.price : 0;
-      const currentSubtotal = this.lineItems
-        .filter(x => !x.consult)
-        .reduce((sum, x) => sum + x.price, 0);
-
-      if(it.type === 'percent_base') return Math.ceil(base * it.rate / 100) * 100;
-      if(it.type === 'percent_total') {
-        // 「合計金額の○％」は、短納期料金を除いた依頼金額を基準に計算
-        return Math.ceil(currentSubtotal * it.rate / 100) * 100;
-      }
-      return it.price || 0;
-    },
-    optionPriceLabel(it){
-      if(it.type === 'consult') return '要相談';
-      if(it.type === 'percent_base') return `+¥${this.optionPrice(it).toLocaleString('ja-JP')}`;
-      if(it.type === 'percent_total') return `+¥${this.optionPrice(it).toLocaleString('ja-JP')}`;
-      return `+¥${(it.price || 0).toLocaleString('ja-JP')}～`;
-    },
     toggleSection(id){
       this.openSections[id] = !this.openSections[id];
     },
