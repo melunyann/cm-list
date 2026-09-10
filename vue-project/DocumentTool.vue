@@ -23,6 +23,7 @@ export default {
         issueDate: todayStr(),
         validUntil: '',
         dueDate: '',
+        deliveryDate: '',
         bankInfo: '',
         notes: ''
       },
@@ -33,7 +34,9 @@ export default {
   },
   computed: {
     docLabel(){
-      return this.docType === 'estimate' ? '見積書' : '請求書';
+      if(this.docType === 'estimate') return '見積書';
+      if(this.docType === 'invoice') return '請求書';
+      return '納品書';
     },
     subtotal(){
       return this.items.reduce((sum, it) => sum + (Number(it.qty) || 0) * (Number(it.unitPrice) || 0), 0);
@@ -115,7 +118,8 @@ export default {
   mounted(){
     this.loadIssuer();
     if(!this.form.docNo){
-      this.form.docNo = (this.docType === 'estimate' ? 'EST-' : 'INV-') + Date.now().toString().slice(-8);
+      const prefix = this.docType === 'estimate' ? 'EST-' : this.docType === 'invoice' ? 'INV-' : 'DEL-';
+      this.form.docNo = prefix + Date.now().toString().slice(-8);
     }
   }
 };
@@ -126,6 +130,7 @@ export default {
     <div class="doc-type-tabs">
       <button :class="{active: docType==='estimate'}" @click="docType='estimate'">見積書</button>
       <button :class="{active: docType==='invoice'}" @click="docType='invoice'">請求書</button>
+      <button :class="{active: docType==='delivery'}" @click="docType='delivery'">納品書</button>
     </div>
 
     <div class="doc-grid">
@@ -154,8 +159,11 @@ export default {
         <template v-if="docType==='estimate'">
           <div class="field"><label>有効期限</label><input type="date" v-model="form.validUntil"></div>
         </template>
-        <template v-else>
+        <template v-else-if="docType==='invoice'">
           <div class="field"><label>支払期限</label><input type="date" v-model="form.dueDate"></div>
+        </template>
+        <template v-else>
+          <div class="field"><label>納品日</label><input type="date" v-model="form.deliveryDate"></div>
         </template>
 
         <h3>品目</h3>
@@ -190,6 +198,7 @@ export default {
               <div>発行日：{{ form.issueDate || '—' }}</div>
               <div v-if="docType==='estimate' && form.validUntil">有効期限：{{ form.validUntil }}</div>
               <div v-if="docType==='invoice' && form.dueDate">お支払期限：{{ form.dueDate }}</div>
+              <div v-if="docType==='delivery' && form.deliveryDate">納品日：{{ form.deliveryDate }}</div>
             </div>
           </div>
 
