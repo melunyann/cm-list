@@ -210,7 +210,6 @@ export default {
         <button :class="{active: view==='dashboard'}" @click="view='dashboard'">ダッシュボード</button>
         <button :class="{active: view==='list'}" @click="view='list'">受注一覧</button>
         <button :class="{active: view==='doc'}" @click="view='doc'">各種書類</button>
-        <button :class="{active: view==='hearing'}" @click="view='hearing'">ヒアリングシート</button>
       </nav>
       <div class="backup-actions">
         <button @click="exportJSON">JSON書き出し</button>
