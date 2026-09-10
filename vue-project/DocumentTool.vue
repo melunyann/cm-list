@@ -40,12 +40,6 @@ export default {
     },
     subtotal(){
       return this.items.reduce((sum, it) => sum + (Number(it.qty) || 0) * (Number(it.unitPrice) || 0), 0);
-    },
-    tax(){
-      return Math.round(this.subtotal * 0.1);
-    },
-    total(){
-      return this.subtotal + this.tax;
     }
   },
   watch: {
@@ -226,9 +220,7 @@ export default {
             </tbody>
           </table>
           <div class="doc-totals">
-            <div><span>小計</span><span>¥{{ subtotal.toLocaleString('ja-JP') }}</span></div>
-            <div><span>消費税（10%）</span><span>¥{{ tax.toLocaleString('ja-JP') }}</span></div>
-            <div class="grand"><span>合計金額</span><span>¥{{ total.toLocaleString('ja-JP') }}</span></div>
+            <div class="grand"><span>合計金額（税込）</span><span>¥{{ subtotal.toLocaleString('ja-JP') }}</span></div>
           </div>
 
           <div class="doc-notes" v-if="docType==='invoice' && form.bankInfo">
