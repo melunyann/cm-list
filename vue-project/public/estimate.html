@@ -42,10 +42,11 @@
   .field input:focus, .field select:focus, .field textarea:focus{ outline: none; border-color: var(--ac); }
   .field textarea{ resize: vertical; font-family: inherit; }
 
-  .choice-group{ display: flex; flex-direction: column; gap: 8px; }
+  /* ---- 横並びの選択ボタン ---- */
+  .choice-group{ display: flex; flex-wrap: wrap; gap: 8px; }
   .choice-btn{
-    display: flex; justify-content: space-between; align-items: center;
-    text-align: left; width: 100%; font-family: inherit; cursor: pointer;
+    display: flex; flex: 1 1 calc(50% - 4px); justify-content: space-between; align-items: center;
+    text-align: left; font-family: inherit; cursor: pointer;
     background: #fff; border: 1px solid var(--ls); border-radius: var(--rd);
     padding: 10px 12px; font-size: 13.5px; color: var(--ik);
   }
@@ -56,6 +57,41 @@
   .choice-btn.selected{ border-color: var(--ac); background: #FBF6EC; }
   .choice-btn.selected .price{ color: var(--ac); }
   .choice-btn:hover{ border-color: var(--ac); }
+
+  /* ---- アコーディオン（オプション） ---- */
+  .accordion{ border: 1px solid var(--ls); border-radius: var(--rd); overflow: hidden; }
+  .accordion + .accordion{ margin-top: 8px; }
+  .accordion-head{
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    background: #fff; border: none; cursor: pointer;
+    padding: 10px 12px; font-family: inherit; font-size: 13.5px; color: var(--ik); text-align: left;
+  }
+  .accordion-head .label{ flex: 1; }
+  .accordion-head .badge{ font-size: 11px; color: var(--ac); font-family: 'JetBrains Mono', monospace; }
+  .accordion-head .chevron{ font-size: 14px; color: var(--is); width: 16px; text-align: center; }
+  .accordion-head:hover{ background: #FAFBF7; }
+  .accordion-body{
+    padding: 10px 12px 12px; border-top: 1px solid var(--ln); background: #FAFBF7;
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .accordion-body .choice-btn{ flex-basis: 100%; }
+
+  /* ---- 個数選択（制作オプション） ---- */
+  .qty-row{
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; background: #fff; border: 1px solid var(--ls); border-radius: var(--rd);
+    padding: 9px 10px; font-size: 13px;
+  }
+  .qty-row.active{ border-color: var(--ac); background: #FBF6EC; }
+  .qty-name{ display: flex; flex-direction: column; gap: 2px; }
+  .qty-name .unit-price{ font-size: 11px; color: var(--is); font-family: 'JetBrains Mono', monospace; }
+  .qty-controls{ display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .qty-btn{
+    width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--ls);
+    background: #fff; cursor: pointer; font-size: 14px; line-height: 1; color: var(--ik);
+  }
+  .qty-btn:hover{ border-color: var(--ac); color: var(--ac); }
+  .qty-value{ min-width: 18px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; }
 
   .btn-primary{
     background: var(--ik); color: #fff; border: none; padding: 11px 18px;
@@ -118,19 +154,44 @@
             <span class="choice-name">{{ p.name }}</span>
             <span class="choice-note" v-if="p.note">{{ p.note }}</span>
           </span>
-          <span class="price">¥{{ p.price.toLocaleString('ja-JP') }}〜</span>
+          <span class="price">¥{{ p.price.toLocaleString('ja-JP') }}</span>
         </button>
       </div>
 
-      <h3>オプション選択（複数選択可）</h3>
-      <div class="choice-group">
-        <button
-          v-for="o in options" :key="o.id"
-          class="choice-btn" :class="{selected: form.optionIds.includes(o.id)}"
-          @click="toggleOption(o.id)">
-          <span>{{ o.name }}</span>
-          <span class="price">+¥{{ o.price.toLocaleString('ja-JP') }}</span>
+      <h3>オプション選択</h3>
+      <div v-for="g in optionGroups" :key="g.id" class="accordion">
+        <button class="accordion-head" @click="toggleSection(g.id)">
+          <span class="label">{{ g.label }}</span>
+          <span class="badge" v-if="groupSummary(g.id)">{{ groupSummary(g.id) }}</span>
+          <span class="chevron">{{ openSections[g.id] ? '－' : '＋' }}</span>
         </button>
+        <div class="accordion-body" v-show="openSections[g.id]">
+
+          <template v-if="g.hasQty">
+            <div class="qty-row" v-for="it in g.items" :key="it.id" :class="{active: (form.optionQty[it.id] || 0) > 0}">
+              <span class="qty-name">
+                {{ it.name }}
+                <span class="unit-price">¥{{ it.price.toLocaleString('ja-JP') }} ／ 個</span>
+              </span>
+              <span class="qty-controls">
+                <button class="qty-btn" @click="decQty(it.id)">－</button>
+                <span class="qty-value">{{ form.optionQty[it.id] || 0 }}</span>
+                <button class="qty-btn" @click="incQty(it.id)">＋</button>
+              </span>
+            </div>
+          </template>
+
+          <template v-else>
+            <button
+              v-for="it in g.items" :key="it.id"
+              class="choice-btn" :class="{selected: form.optionIds.includes(it.id)}"
+              @click="toggleOption(it.id)">
+              <span>{{ it.name }}</span>
+              <span class="price">+¥{{ it.price.toLocaleString('ja-JP') }}</span>
+            </button>
+          </template>
+
+        </div>
       </div>
 
       <h3>使用用途</h3>
@@ -176,16 +237,15 @@
           <tbody>
             <tr v-for="it in lineItems" :key="it.name">
               <td>{{ it.name }}</td>
-              <td class="num">¥{{ it.price.toLocaleString('ja-JP') }}{{ it.approx ? '〜' : '' }}</td>
+              <td class="num">¥{{ it.price.toLocaleString('ja-JP') }}</td>
             </tr>
           </tbody>
         </table>
         <p class="empty-note" v-else>プランを選ぶと、ここに内容が表示されます。</p>
 
         <div class="doc-totals" v-if="lineItems.length">
-          <div class="grand"><span>お見積もり金額（目安）</span><span>¥{{ total.toLocaleString('ja-JP') }}〜</span></div>
+          <div class="grand"><span>お見積もり金額</span><span>¥{{ total.toLocaleString('ja-JP') }}</span></div>
         </div>
-        <p class="empty-note" v-if="lineItems.length">※ご依頼内容の詳細により、金額が変動する場合があります。</p>
 
         <div class="doc-block" v-if="form.usage">
           <h4>使用用途</h4>
@@ -217,10 +277,33 @@ const PLANS = [
   { id: 'single', name: '一枚絵',             note: '',                   price: 5000 },
 ];
 
-const OPTIONS = [
-  { id: 'commercial', name: '商用利用ライセンス', price: 3000 },
-  { id: 'extra_format', name: 'データ形式追加（PSD/AIなど）', price: 1000 },
-  { id: 'rush', name: '特急対応（3日以内）', price: 2000 },
+// オプションは3つのグループ（アコーディオン）に分割
+// hasQty: true の場合、個数を選んで price × 個数 で計算されます
+const OPTION_GROUPS = [
+  {
+    id: 'production',
+    label: '制作オプション',
+    hasQty: true,
+    items: [
+      { id: 'extra_format', name: 'データ形式追加（PSD/AIなど）', price: 1000 },
+    ]
+  },
+  {
+    id: 'usage',
+    label: '利用オプション',
+    hasQty: false,
+    items: [
+      { id: 'commercial', name: '商用利用ライセンス', price: 3000 },
+    ]
+  },
+  {
+    id: 'rush',
+    label: '短納期対応',
+    hasQty: false,
+    items: [
+      { id: 'rush', name: '特急対応（3日以内）', price: 2000 },
+    ]
+  }
 ];
 
 const PAYMENT_METHODS = [
@@ -242,15 +325,17 @@ createApp({
   data(){
     return {
       plans: PLANS,
-      options: OPTIONS,
+      optionGroups: OPTION_GROUPS,
       paymentMethods: PAYMENT_METHODS,
       today: todayStr(),
       generating: false,
+      openSections: { production: false, usage: false, rush: false },
       form: {
         clientName: '',
         contact: '',
         planId: '',
         optionIds: [],
+        optionQty: {},
         usage: '',
         deadlineHope: '',
         paymentMethod: PAYMENT_METHODS[0],
@@ -262,13 +347,23 @@ createApp({
     selectedPlan(){
       return this.plans.find(p => p.id === this.form.planId) || null;
     },
-    selectedOptions(){
-      return this.options.filter(o => this.form.optionIds.includes(o.id));
-    },
     lineItems(){
       const items = [];
-      if(this.selectedPlan) items.push({ name: this.selectedPlan.name, price: this.selectedPlan.price, approx: true });
-      this.selectedOptions.forEach(o => items.push({ name: o.name, price: o.price, approx: false }));
+      if(this.selectedPlan) items.push({ name: this.selectedPlan.name, price: this.selectedPlan.price });
+
+      this.optionGroups.forEach(g => {
+        if(g.hasQty){
+          g.items.forEach(it => {
+            const qty = this.form.optionQty[it.id] || 0;
+            if(qty > 0) items.push({ name: `${it.name} ×${qty}`, price: it.price * qty });
+          });
+        }else{
+          g.items.forEach(it => {
+            if(this.form.optionIds.includes(it.id)) items.push({ name: it.name, price: it.price });
+          });
+        }
+      });
+
       return items;
     },
     total(){
@@ -276,10 +371,29 @@ createApp({
     }
   },
   methods: {
+    toggleSection(id){
+      this.openSections[id] = !this.openSections[id];
+    },
     toggleOption(id){
       const i = this.form.optionIds.indexOf(id);
       if(i === -1) this.form.optionIds.push(id);
       else this.form.optionIds.splice(i, 1);
+    },
+    incQty(id){
+      this.form.optionQty[id] = (this.form.optionQty[id] || 0) + 1;
+    },
+    decQty(id){
+      this.form.optionQty[id] = Math.max(0, (this.form.optionQty[id] || 0) - 1);
+    },
+    groupSummary(groupId){
+      const g = this.optionGroups.find(x => x.id === groupId);
+      if(!g) return '';
+      if(g.hasQty){
+        const totalQty = g.items.reduce((sum, it) => sum + (this.form.optionQty[it.id] || 0), 0);
+        return totalQty > 0 ? `${totalQty}点選択中` : '';
+      }
+      const count = g.items.filter(it => this.form.optionIds.includes(it.id)).length;
+      return count > 0 ? `${count}件選択中` : '';
     },
     async downloadPDF(){
       if(!this.form.planId) return;
