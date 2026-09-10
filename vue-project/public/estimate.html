@@ -104,11 +104,11 @@
 
     <!-- ===== 選択フォーム ===== -->
     <div class="form-card">
-      <h3>お客様情報</h3>
+      <h3>ご依頼者様情報</h3>
       <div class="field"><label>お名前</label><input type="text" v-model="form.clientName" placeholder="お名前をご入力ください"></div>
       <div class="field"><label>ご連絡先（任意）</label><input type="text" v-model="form.contact" placeholder="メールアドレスやSNSアカウントなど"></div>
 
-      <h3>プランを選ぶ</h3>
+      <h3>プラン選択</h3>
       <div class="choice-group">
         <button
           v-for="p in plans" :key="p.id"
@@ -122,7 +122,7 @@
         </button>
       </div>
 
-      <h3>オプションを選ぶ（複数選択可）</h3>
+      <h3>オプション選択（複数選択可）</h3>
       <div class="choice-group">
         <button
           v-for="o in options" :key="o.id"
@@ -135,7 +135,7 @@
 
       <h3>使用用途</h3>
       <div class="field">
-        <textarea v-model="form.usage" rows="2" placeholder="個人利用／SNS投稿用／商用利用 など"></textarea>
+        <textarea v-model="form.usage" rows="2" placeholder="個人利用／SNS投稿用／商用利用 など。詳細に記載してください"></textarea>
       </div>
 
       <h3>ご希望の納期</h3>
@@ -209,16 +209,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
-/* ============================================================
-   ここから下の3つのリストが、実際にお客さんに表示される内容です。
-   name と price（円）を、あなたのサービス内容に合わせて自由に
-   書き換えてください。行を増やす／減らすのも自由です。
-   ============================================================ */
+
 const PLANS = [
   { id: 'kani',   name: '簡易イラスト',       note: 'ペアのみ・商用不可', price: 1500 },
   { id: 'simple', name: 'シンプルイラスト',   note: '',                   price: 2000 },
   { id: 'icon',   name: 'アイコンイラスト',   note: '',                   price: 3500 },
-  { id: 'single', name: '一枚絵',             note: '',                   price: 7000 },
+  { id: 'single', name: '一枚絵',             note: '',                   price: 5000 },
 ];
 
 const OPTIONS = [
@@ -228,14 +224,11 @@ const OPTIONS = [
 ];
 
 const PAYMENT_METHODS = [
-  'プラットフォーム経由（先払い）',
+  'つなぐ',
   '銀行振込',
   'PayPay',
 ];
-/* ============================================================
-   編集はここまで。この下は仕組みの部分なので、通常は
-   触らなくて大丈夫です。
-   ============================================================ */
+
 
 function todayStr(){
   const d = new Date();
