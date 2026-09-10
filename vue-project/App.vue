@@ -209,7 +209,8 @@ export default {
       <nav class="tabs">
         <button :class="{active: view==='dashboard'}" @click="view='dashboard'">ダッシュボード</button>
         <button :class="{active: view==='list'}" @click="view='list'">受注一覧</button>
-        <button :class="{active: view==='doc'}" @click="view='doc'">見積書・請求書</button>
+        <button :class="{active: view==='doc'}" @click="view='doc'">各種書類</button>
+        <button :class="{active: view==='hearing'}" @click="view='hearing'">ヒアリングシート</button>
       </nav>
       <div class="backup-actions">
         <button @click="exportJSON">JSON書き出し</button>
@@ -357,6 +358,9 @@ export default {
     </section>
 
     <!-- ============ Document tool ============ -->
+    <section v-show="view==='hearing'">
+  <HearingSheet v-if="view==='hearing'" />
+</section>
     <section v-show="view==='doc'">
       <DocumentTool v-if="view==='doc'" />
     </section>
