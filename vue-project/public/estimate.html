@@ -42,6 +42,14 @@
   .field input:focus, .field select:focus, .field textarea:focus{ outline: none; border-color: var(--ac); }
   .field textarea{ resize: vertical; font-family: inherit; }
 
+  .plan-tabs{ display:flex; gap: 4px; flex-wrap: wrap; }
+  .plan-tabs button{
+    flex: 1; min-width: 90px; background: var(--pp); border: 1px solid var(--ls); color: var(--is);
+    padding: 9px 8px; font-size: 12.5px; font-family: inherit; cursor: pointer; border-radius: var(--rd);
+  }
+  .plan-tabs button.active{ background: var(--ik); color: #fff; border-color: var(--ik); }
+  .plan-note{ font-size: 11.5px; color: var(--dg); padding: 2px 2px 0; }
+
   .choice-group{ display: flex; flex-direction: column; gap: 8px; }
   .choice-group.compact{ flex-direction: row; flex-wrap: wrap; gap: 6px; }
   .choice-row{ display: flex; align-items: center; gap: 8px; }
@@ -55,8 +63,6 @@
   }
   .choice-btn.small{ width: auto; padding: 7px 12px; font-size: 12.5px; }
   .choice-btn .price{ font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: var(--is); flex-shrink: 0; margin-left: 10px; }
-  .choice-text{ display: flex; flex-direction: column; gap: 2px; }
-  .choice-note{ font-size: 11px; color: var(--dg); }
   .choice-btn.selected{ border-color: var(--ac); background: #FBF6EC; }
   .choice-btn.selected .price{ color: var(--ac); }
   .choice-btn:hover{ border-color: var(--ac); }
@@ -77,10 +83,7 @@
     font-size: 13px; font-weight: 500; color: var(--ik); cursor: pointer;
   }
   .accordion-head .chev{ color: var(--is); font-size: 11px; }
-  .accordion-head .badge{
-    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ac);
-    margin-left: 8px;
-  }
+  .accordion-head .badge{ font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ac); margin-left: 8px; }
   .accordion-body{ padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 
   .btn-primary{
@@ -89,6 +92,11 @@
   }
   .btn-primary:hover{ background: #14190f; }
   .btn-primary:disabled{ opacity: .5; cursor: default; }
+  .btn-ghost{
+    background: var(--cd); border: 1px solid var(--ls); color: var(--is);
+    padding: 8px 14px; border-radius: var(--rd); font-size: 12.5px; cursor: pointer; width: 100%;
+  }
+  .btn-ghost:hover{ border-color: var(--dg); color: var(--dg); }
 
   .preview-wrap{ overflow-x: auto; }
   .preview{
@@ -106,8 +114,9 @@
   .doc-table td{ font-size: 13px; padding: 9px 10px; border: 1px solid var(--ln); }
   .doc-table td.num, .doc-table th:last-child{ text-align: right; }
 
-  .doc-totals{ margin-left: auto; width: 260px; font-size: 13.5px; margin-bottom: 20px; }
+  .doc-totals{ margin-left: auto; width: 260px; font-size: 13.5px; margin-bottom: 8px; }
   .doc-totals .grand{ display:flex; justify-content: space-between; border-top: 2px solid var(--ik); font-weight: 700; font-size: 15px; padding-top: 10px; }
+  .doc-disclaimer{ font-size: 11px; color: var(--dg); text-align: right; margin-bottom: 20px; }
 
   .doc-block{ margin-bottom: 16px; }
   .doc-block h4{ font-size: 12px; color: var(--is); margin: 0 0 6px; }
@@ -123,7 +132,7 @@
 
   <div class="page-head">
     <h1>かんたん見積もり</h1>
-    <p>プランとオプションを選ぶと、その場で見積書PDFを作成できます。ダウンロードしたPDFをそのままご連絡ください。</p>
+    <p>プランと内容を選んで、その場で見積書PDFを作成できます。ダウンロードしたPDFをそのままご連絡ください。</p>
   </div>
 
   <div class="layout">
@@ -135,28 +144,23 @@
       <div class="field"><label>ご連絡先（任意）</label><input type="text" v-model="form.contact" placeholder="メールアドレスやSNSアカウントなど"></div>
 
       <h3>プランを選ぶ</h3>
+      <div class="plan-tabs">
+        <button
+          v-for="g in planGroups" :key="g.id"
+          :class="{active: activeTab === g.id}"
+          @click="activeTab = g.id">{{ g.name }}</button>
+      </div>
+      <p class="plan-note" v-if="activeGroup.note">{{ activeGroup.note }}</p>
+
       <div class="choice-group">
         <button
-          v-for="p in plans" :key="p.id"
-          class="choice-btn" :class="{selected: form.planId === p.id}"
-          @click="form.planId = p.id">
-          <span class="choice-text">
-            <span class="choice-name">{{ p.name }}</span>
-            <span class="choice-note" v-if="p.note">{{ p.note }}</span>
-          </span>
-          <span class="price">¥{{ p.price.toLocaleString('ja-JP') }}〜</span>
+          v-for="r in activeGroup.ranges" :key="r.id"
+          class="choice-btn" :class="{selected: form.rangeId === r.id}"
+          @click="form.rangeId = r.id">
+          <span>{{ r.name }}</span>
+          <span class="price">¥{{ r.price.toLocaleString('ja-JP') }}〜</span>
         </button>
       </div>
-
-      <template v-if="selectedPlan">
-        <h3>描写範囲</h3>
-        <div class="choice-group compact">
-          <button
-            v-for="r in rangeOptions" :key="r"
-            class="choice-btn small" :class="{selected: form.range === r}"
-            @click="form.range = r">{{ r }}</button>
-        </div>
-      </template>
 
       <h3>オプション</h3>
 
@@ -222,6 +226,24 @@
         <textarea v-model="form.usage" rows="2" placeholder="個人利用／SNS投稿用／商用利用 など"></textarea>
       </div>
 
+      <h3>ご依頼内容</h3>
+      <div class="field">
+        <textarea v-model="form.requestDetail" rows="3" placeholder="ご依頼の内容を自由にご記入ください"></textarea>
+      </div>
+
+      <h3>色形式</h3>
+      <div class="choice-group compact">
+        <button
+          v-for="c in colorModes" :key="c"
+          class="choice-btn small" :class="{selected: form.colorMode === c}"
+          @click="form.colorMode = c">{{ c }}</button>
+      </div>
+
+      <h3>作品イメージ・ターゲット・参考作品</h3>
+      <div class="field">
+        <textarea v-model="form.imageRef" rows="3" placeholder="ご希望の雰囲気、ターゲット、めるねの作品で近いイメージのものがあれば教えてください"></textarea>
+      </div>
+
       <h3>ご希望の納期</h3>
       <div class="field"><input type="date" v-model="form.deadlineHope"></div>
 
@@ -237,9 +259,10 @@
         <textarea v-model="form.notes" rows="3" placeholder="ご要望やご質問があればご記入ください"></textarea>
       </div>
 
-      <button class="btn-primary" @click="downloadPDF" :disabled="generating || !form.planId">
-        {{ generating ? '作成中…' : (form.planId ? '見積書PDFをダウンロード' : 'プランを選んでください') }}
+      <button class="btn-primary" @click="downloadPDF" :disabled="generating || !form.rangeId">
+        {{ generating ? '作成中…' : (form.rangeId ? '見積書PDFをダウンロード' : 'プラン内容を選んでください') }}
       </button>
+      <button class="btn-ghost" @click="resetForm">入力内容をクリア</button>
     </div>
 
     <!-- ===== プレビュー ===== -->
@@ -264,13 +287,27 @@
             </tr>
           </tbody>
         </table>
-        <p class="empty-note" v-else>プランを選ぶと、ここに内容が表示されます。</p>
+        <p class="empty-note" v-else>プラン内容を選ぶと、ここに表示されます。</p>
 
         <div class="doc-totals" v-if="lineItems.length">
           <div class="grand"><span>お見積もり金額（目安）</span><span>¥{{ total.toLocaleString('ja-JP') }}〜</span></div>
         </div>
-        <p class="empty-note" v-if="lineItems.length">※ご依頼内容の詳細により、金額が変動する場合があります。</p>
+        <p class="doc-disclaimer" v-if="lineItems.length">
+          ※本お見積りは概算です。お支払い方法や正式なヒアリング後の内容確定により、金額が変動する場合があります。
+        </p>
 
+        <div class="doc-block" v-if="form.requestDetail">
+          <h4>ご依頼内容</h4>
+          <p>{{ form.requestDetail }}</p>
+        </div>
+        <div class="doc-block" v-if="form.colorMode">
+          <h4>色形式</h4>
+          <p>{{ form.colorMode }}</p>
+        </div>
+        <div class="doc-block" v-if="form.imageRef">
+          <h4>作品イメージ・ターゲット・参考作品</h4>
+          <p>{{ form.imageRef }}</p>
+        </div>
         <div class="doc-block" v-if="form.usage">
           <h4>使用用途</h4>
           <p>{{ form.usage }}</p>
@@ -296,24 +333,45 @@
 /* ============================================================
    ここから下の設定を、あなたのサービス内容に合わせて書き換えてください。
 
-   ・PLANS：プラン一覧（price は円）
-   ・RANGE_OPTIONS：描写範囲の選択肢（今は金額に影響しません）
+   ・PLAN_GROUPS：プランのタブと、その中の描写範囲ごとの金額
+       ※「腰上」「全身」など、具体的な金額をまだいただいていない
+         範囲には仮の金額を入れています。price の数字だけ、
+         実際の金額に書き換えてください（他は触らなくてOK）。
    ・PRODUCTION_OPTIONS：制作オプション（人物追加など）
-       priceType: 'percent' → プラン価格の◯%として計算
+       priceType: 'percent' → 選んだ範囲の価格の◯%として計算
        priceType: 'fixed'   → 固定の円額
        hasQty: true         → 個数を選べるようにする
    ・USAGE_OPTIONS：利用オプション（固定の円額、複数選択可）
    ・RUSH_OPTIONS：短納期対応（1つだけ選べる、%指定推奨）
+   ・COLOR_MODES：色形式の選択肢
    ・PAYMENT_METHODS：支払い方法の選択肢
    ============================================================ */
-const PLANS = [
-  { id: 'kani',   name: '簡易イラスト',       note: 'ペアのみ・商用不可', price: 1500 },
-  { id: 'simple', name: 'シンプルイラスト',   note: '',                   price: 2000 },
-  { id: 'icon',   name: 'アイコンイラスト',   note: '',                   price: 3500 },
-  { id: 'single', name: '一枚絵',             note: '',                   price: 7000 },
+const PLAN_GROUPS = [
+  {
+    id: 'kani', name: '簡易イラスト', note: 'ペアのみ・商用不可',
+    ranges: [
+      { id: 'kani_mune',  name: '胸上', price: 1500 },
+      { id: 'kani_koshi', name: '腰上', price: 2000 }, // ← 仮の金額です
+    ]
+  },
+  {
+    id: 'simple', name: 'シンプルイラスト', note: '',
+    ranges: [
+      { id: 'simple_mune',    name: '胸上', price: 2000 },
+      { id: 'simple_koshi',   name: '腰上', price: 2500 }, // ← 仮の金額です
+      { id: 'simple_zenshin', name: '全身', price: 3000 }, // ← 仮の金額です
+    ]
+  },
+  {
+    id: 'kakikomi', name: '描き込みイラスト', note: '',
+    ranges: [
+      { id: 'kk_icon',            name: 'アイコン',       price: 3500 },
+      { id: 'kk_zenshin',         name: '全身',           price: 5000 }, // ← 仮の金額です
+      { id: 'kk_ichimai_koshi',   name: '一枚絵　腰上',   price: 6000 }, // ← 仮の金額です
+      { id: 'kk_ichimai_zenshin', name: '一枚絵　全身',   price: 7000 },
+    ]
+  },
 ];
-
-const RANGE_OPTIONS = ['顔のみ', '胸上', '半身', '全身'];
 
 const PRODUCTION_OPTIONS = [
   { id: 'extra_person', name: '人物追加', priceType: 'percent', value: 100, hasQty: true },
@@ -328,6 +386,8 @@ const RUSH_OPTIONS = [
   { id: 'rush3', name: '特急対応（3日以内）', priceType: 'percent', value: 30 },
 ];
 
+const COLOR_MODES = ['CMYK', 'RGB', '相談したい'];
+
 const PAYMENT_METHODS = [
   'プラットフォーム経由（先払い）',
   '銀行振込',
@@ -338,10 +398,29 @@ const PAYMENT_METHODS = [
    触らなくて大丈夫です。
    ============================================================ */
 
+const DRAFT_KEY = 'estimate_tool_draft_v1';
+
 function todayStr(){
   const d = new Date();
   const pad = n => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function blankForm(){
+  return {
+    clientName: '', contact: '',
+    rangeId: '',
+    productionQty: {},
+    usageOptionIds: [],
+    rushId: '',
+    usage: '',
+    requestDetail: '',
+    colorMode: '',
+    imageRef: '',
+    deadlineHope: '',
+    paymentMethod: PAYMENT_METHODS[0],
+    notes: ''
+  };
 }
 
 const { createApp } = Vue;
@@ -349,42 +428,37 @@ const { createApp } = Vue;
 createApp({
   data(){
     return {
-      plans: PLANS,
-      rangeOptions: RANGE_OPTIONS,
+      planGroups: PLAN_GROUPS,
       productionOptions: PRODUCTION_OPTIONS,
       usageOptions: USAGE_OPTIONS,
       rushOptions: RUSH_OPTIONS,
+      colorModes: COLOR_MODES,
       paymentMethods: PAYMENT_METHODS,
       today: todayStr(),
       generating: false,
+      activeTab: PLAN_GROUPS[0].id,
       openSections: { production: false, usage: false, rush: false },
-      form: {
-        clientName: '',
-        contact: '',
-        planId: '',
-        range: '',
-        productionQty: {},
-        usageOptionIds: [],
-        rushId: '',
-        usage: '',
-        deadlineHope: '',
-        paymentMethod: PAYMENT_METHODS[0],
-        notes: ''
-      }
+      form: blankForm()
     };
   },
   computed: {
-    selectedPlan(){
-      return this.plans.find(p => p.id === this.form.planId) || null;
+    activeGroup(){
+      return this.planGroups.find(g => g.id === this.activeTab) || this.planGroups[0];
+    },
+    selectedRange(){
+      for(const g of this.planGroups){
+        const found = g.ranges.find(r => r.id === this.form.rangeId);
+        if(found) return { ...found, groupName: g.name };
+      }
+      return null;
     },
     productionCount(){
       return Object.keys(this.form.productionQty).length;
     },
     lineItems(){
       const items = [];
-      if(this.selectedPlan){
-        const planName = this.selectedPlan.name + (this.form.range ? `（${this.form.range}）` : '');
-        items.push({ name: planName, price: this.selectedPlan.price, approx: true });
+      if(this.selectedRange){
+        items.push({ name: `${this.selectedRange.groupName}（${this.selectedRange.name}）`, price: this.selectedRange.price, approx: true });
       }
       this.productionOptions.forEach(o => {
         const qty = this.form.productionQty[o.id];
@@ -406,18 +480,26 @@ createApp({
       return this.lineItems.reduce((sum, it) => sum + it.price, 0);
     }
   },
+  watch: {
+    form: {
+      deep: true,
+      handler(v){
+        try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(v)); }catch(e){ /* noop */ }
+      }
+    }
+  },
   methods: {
     toggleSection(key){
       this.openSections[key] = !this.openSections[key];
     },
     priceForOption(o){
-      if(!this.selectedPlan) return 0;
-      if(o.priceType === 'percent') return Math.round(this.selectedPlan.price * o.value / 100);
+      if(!this.selectedRange) return 0;
+      if(o.priceType === 'percent') return Math.round(this.selectedRange.price * o.value / 100);
       return o.value;
     },
     optionPriceLabel(o){
       if(o.priceType === 'percent'){
-        return this.selectedPlan ? ('+¥' + this.priceForOption(o).toLocaleString('ja-JP')) : ('+' + o.value + '%');
+        return this.selectedRange ? ('+¥' + this.priceForOption(o).toLocaleString('ja-JP')) : ('+' + o.value + '%');
       }
       return '+¥' + o.value.toLocaleString('ja-JP');
     },
@@ -441,8 +523,20 @@ createApp({
       if(i === -1) this.form.usageOptionIds.push(id);
       else this.form.usageOptionIds.splice(i, 1);
     },
+    resetForm(){
+      if(!confirm('入力内容をすべてクリアします。よろしいですか？')) return;
+      this.form = blankForm();
+      this.activeTab = this.planGroups[0].id;
+      try{ localStorage.removeItem(DRAFT_KEY); }catch(e){ /* noop */ }
+    },
+    loadDraft(){
+      try{
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if(raw) this.form = { ...blankForm(), ...JSON.parse(raw) };
+      }catch(e){ /* noop */ }
+    },
     async downloadPDF(){
-      if(!this.form.planId) return;
+      if(!this.form.rangeId) return;
       this.generating = true;
       await this.$nextTick();
       try{
@@ -477,6 +571,9 @@ createApp({
         this.generating = false;
       }
     }
+  },
+  mounted(){
+    this.loadDraft();
   }
 }).mount('#app');
 </script>
