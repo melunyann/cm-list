@@ -50,9 +50,13 @@
   .plan-tabs button.active{ background: var(--ik); color: #fff; border-color: var(--ik); }
   .plan-note{ font-size: 11.5px; color: var(--dg); padding: 2px 2px 0; }
 
-  .choice-group{ display: flex; flex-direction: column; gap: 8px; }
-  .choice-group.compact{ flex-direction: row; flex-wrap: wrap; gap: 6px; }
-  .choice-row{ display: flex; align-items: center; gap: 8px; }
+  .field-row{ display:flex; gap: 12px; }
+  .field-row .field{ flex: 1; min-width: 0; }
+
+  .choice-group{ display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; }
+  .choice-group .choice-btn{ flex: 1 1 160px; }
+  .choice-group.compact .choice-btn{ flex: 0 0 auto; }
+  .choice-row{ display: flex; align-items: center; gap: 8px; flex: 1 1 220px; }
   .choice-row .choice-btn{ flex: 1; }
 
   .choice-btn{
@@ -84,7 +88,8 @@
   }
   .accordion-head .chev{ color: var(--is); font-size: 11px; }
   .accordion-head .badge{ font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ac); margin-left: 8px; }
-  .accordion-body{ padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .accordion-body{ padding: 12px; display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; }
+  .accordion-body > .choice-btn{ flex: 1 1 160px; }
 
   .btn-primary{
     background: var(--ik); color: #fff; border: none; padding: 11px 18px;
@@ -140,8 +145,10 @@
     <!-- ===== 選択フォーム ===== -->
     <div class="form-card">
       <h3>お客様情報</h3>
-      <div class="field"><label>お名前</label><input type="text" v-model="form.clientName" placeholder="お名前をご入力ください"></div>
-      <div class="field"><label>ご連絡先（任意）</label><input type="text" v-model="form.contact" placeholder="メールアドレスやSNSアカウントなど"></div>
+      <div class="field-row">
+        <div class="field"><label>お名前</label><input type="text" v-model="form.clientName" placeholder="お名前をご入力ください"></div>
+        <div class="field"><label>ご連絡先（任意）</label><input type="text" v-model="form.contact" placeholder="メールアドレスやSNSアカウントなど"></div>
+      </div>
 
       <h3>プランを選ぶ</h3>
       <div class="plan-tabs">
@@ -231,12 +238,12 @@
         <textarea v-model="form.requestDetail" rows="3" placeholder="ご依頼の内容を自由にご記入ください"></textarea>
       </div>
 
-      <h3>色形式</h3>
+      <h3>色形式（複数選択可）</h3>
       <div class="choice-group compact">
         <button
           v-for="c in colorModes" :key="c"
-          class="choice-btn small" :class="{selected: form.colorMode === c}"
-          @click="form.colorMode = c">{{ c }}</button>
+          class="choice-btn small" :class="{selected: form.colorModes.includes(c)}"
+          @click="toggleColorMode(c)">{{ c }}</button>
       </div>
 
       <h3>作品イメージ・ターゲット・参考作品</h3>
@@ -244,14 +251,17 @@
         <textarea v-model="form.imageRef" rows="3" placeholder="ご希望の雰囲気、ターゲット、めるねの作品で近いイメージのものがあれば教えてください"></textarea>
       </div>
 
-      <h3>ご希望の納期</h3>
-      <div class="field"><input type="date" v-model="form.deadlineHope"></div>
-
-      <h3>お支払い方法</h3>
-      <div class="field">
-        <select v-model="form.paymentMethod">
-          <option v-for="m in paymentMethods" :key="m" :value="m">{{ m }}</option>
-        </select>
+      <div class="field-row">
+        <div class="field">
+          <label>ご希望の納期</label>
+          <input type="date" v-model="form.deadlineHope">
+        </div>
+        <div class="field">
+          <label>お支払い方法</label>
+          <select v-model="form.paymentMethod">
+            <option v-for="m in paymentMethods" :key="m" :value="m">{{ m }}</option>
+          </select>
+        </div>
       </div>
 
       <h3>備考</h3>
@@ -300,9 +310,9 @@
           <h4>ご依頼内容</h4>
           <p>{{ form.requestDetail }}</p>
         </div>
-        <div class="doc-block" v-if="form.colorMode">
+        <div class="doc-block" v-if="form.colorModes.length">
           <h4>色形式</h4>
-          <p>{{ form.colorMode }}</p>
+          <p>{{ form.colorModes.join('、') }}</p>
         </div>
         <div class="doc-block" v-if="form.imageRef">
           <h4>作品イメージ・ターゲット・参考作品</h4>
@@ -415,7 +425,7 @@ function blankForm(){
     rushId: '',
     usage: '',
     requestDetail: '',
-    colorMode: '',
+    colorModes: [],
     imageRef: '',
     deadlineHope: '',
     paymentMethod: PAYMENT_METHODS[0],
@@ -522,6 +532,11 @@ createApp({
       const i = this.form.usageOptionIds.indexOf(id);
       if(i === -1) this.form.usageOptionIds.push(id);
       else this.form.usageOptionIds.splice(i, 1);
+    },
+    toggleColorMode(c){
+      const i = this.form.colorModes.indexOf(c);
+      if(i === -1) this.form.colorModes.push(c);
+      else this.form.colorModes.splice(i, 1);
     },
     resetForm(){
       if(!confirm('入力内容をすべてクリアします。よろしいですか？')) return;
