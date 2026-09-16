@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>資料まとめシート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pp: #F1F3ED; --cd: #FFFFFF; --ik: #26302A; --is: #6E786E; --if: #A2AB9C;
+    --ln: #E1E6DB; --ls: #CBD4C3; --ac: #A9863C; --dg: #9A4A42; --rd: 4px;
+  }
+  *{ box-sizing: border-box; }
+  html, body{ margin:0; padding:0; }
+  body{
+    background: var(--pp); color: var(--ik);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    -webkit-font-smoothing: antialiased; min-height: 100vh;
+  }
+  #app{ max-width: 1100px; margin: 0 auto; padding: 28px 20px 70px; }
+
+  .page-head{ margin-bottom: 20px; border-bottom: 1px solid var(--ls); padding-bottom: 16px; }
+  .page-head h1{ font-family: 'Zen Old Mincho', serif; font-weight: 700; font-size: 24px; margin: 0 0 6px; letter-spacing: .05em; }
+  .page-head p{ font-size: 13px; color: var(--is); margin: 0; }
+
+  .mode-tabs{ display:flex; gap: 4px; margin-bottom: 18px; }
+  .mode-tabs button{
+    background: var(--cd); border: 1px solid var(--ls); color: var(--is);
+    padding: 8px 20px; font-size: 13.5px; font-family: inherit; cursor: pointer; border-radius: var(--rd);
+  }
+  .mode-tabs button.active{ background: var(--ik); color: #fff; border-color: var(--ik); }
+
+  .btn-primary{
+    background: var(--ik); color: #fff; border: none; padding: 11px 22px;
+    border-radius: var(--rd); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 18px;
+  }
+  .btn-primary:hover{ background: #14190f; }
+
+  .canvas-wrap{ overflow-x: auto; background: var(--cd); border: 1px solid var(--ln); border-radius: var(--rd); padding: 20px; }
+
+  .sheet{ display:flex; gap: 0; background:#fff; }
+  .info-panel{ display:flex; flex-direction:column; border: 1px solid #ddd; }
+  .panel-text{ flex: 0 0 42%; border-bottom: 1px solid #ddd; padding: 14px; }
+  .panel-text textarea{
+    width: 100%; height: 100%; border: none; resize: none; outline: none;
+    font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 14px; line-height: 1.7; color: #26302A;
+  }
+  .panel-bottom{ flex: 1; padding: 12px 14px; display:flex; flex-direction:column; gap: 10px; }
+  .face-grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .face-slot{
+    position: relative; width: 100%; background: #F4F4F2; border: 1px dashed var(--ls);
+    border-radius: 2px; cursor: pointer; overflow: hidden;
+  }
+  .face-slot::before{ content:''; display:block; padding-top: 100%; }
+  .face-slot img{ position:absolute; inset:0; width:100%; height:100%; object-fit: cover; }
+  .face-slot .plus{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color: var(--if); font-size: 22px; }
+  .face-controls{ display:flex; gap: 8px; }
+  .face-controls button{
+    background: none; border: 1px solid var(--ls); color: var(--is); font-size: 11.5px;
+    padding: 4px 10px; border-radius: var(--rd); cursor: pointer; font-family: inherit;
+  }
+  .face-controls button:hover{ border-color: var(--ac); color: var(--ac); }
+
+  .palette-row{ display:flex; align-items:center; gap: 6px; flex-wrap: wrap; }
+  .swatch{ width: 22px; height: 22px; border-radius: 3px; border: 1px solid #ccc; cursor: pointer; }
+  .add-color-btn{
+    width: 22px; height: 22px; border-radius: 3px; border: 1px dashed var(--ls); background: #fff;
+    color: var(--if); font-size: 13px; cursor: pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .add-color-btn:hover{ border-color: var(--ac); color: var(--ac); }
+
+  .illust-slot{
+    position: relative; background: #F4F4F2; border: 1px dashed var(--ls); cursor: pointer; overflow: hidden;
+  }
+  .illust-slot img{ position:absolute; inset:0; width:100%; height:100%; object-fit: contain; background:#fff; }
+  .illust-slot .plus{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color: var(--if); font-size: 13px; }
+  .illust-slot .plus .icon{ font-size: 26px; }
+
+  .illust-pair{ display:flex; flex-direction:row; }
+  .illust-pair .illust-slot{ flex: 1; }
+  .illust-pair .illust-slot + .illust-slot{ border-left: none; }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="page-head">
+    <h1>資料まとめシート</h1>
+    <p>キャラクターの立ち絵・顔画像・カラーパレット・ご依頼内容を、1枚の画像にまとめてダウンロードできます。</p>
+  </div>
+
+  <div class="mode-tabs">
+    <button :class="{active: mode==='solo'}" @click="mode='solo'">1人</button>
+    <button :class="{active: mode==='duo'}" @click="mode='duo'">2人</button>
+  </div>
+
+  <div class="canvas-wrap">
+    <div class="sheet" ref="canvasArea" :style="{width: canvasW + 'px', height: canvasH + 'px'}">
+
+      <!-- 1人：左情報パネル -->
+      <div class="info-panel" v-if="mode==='solo'" :style="{flex: '2 0 0%'}">
+        <panel-content :panel="panels[0]" :panel-idx="0" :on-face-click="triggerFaceUpload" :on-add-face="addFace" :on-remove-face="removeFace" :on-color-click="triggerColorPicker" :on-remove-color="removeColor"></panel-content>
+      </div>
+
+      <!-- 2人：左情報パネル -->
+      <div class="info-panel" v-if="mode==='duo'" :style="{flex: '1 0 0%'}">
+        <panel-content :panel="panels[0]" :panel-idx="0" :on-face-click="triggerFaceUpload" :on-add-face="addFace" :on-remove-face="removeFace" :on-color-click="triggerColorPicker" :on-remove-color="removeColor"></panel-content>
+      </div>
+
+      <!-- 1人：立ち絵1枚 -->
+      <div class="illust-slot" v-if="mode==='solo'" :style="{flex: '1 0 0%'}" @click="triggerIllustrationUpload(0)">
+        <img v-if="illustrations[0]" :src="illustrations[0]">
+        <div class="plus" v-else>
+          <span class="icon">＋</span>
+          <span>立ち絵・膝上イラスト</span>
+        </div>
+      </div>
+
+      <!-- 2人：立ち絵2枚（左キャラ／右キャラ） -->
+      <div class="illust-pair" v-if="mode==='duo'" :style="{flex: '1.2 0 0%'}">
+        <div class="illust-slot" @click="triggerIllustrationUpload(0)">
+          <img v-if="illustrations[0]" :src="illustrations[0]">
+          <div class="plus" v-else>
+            <span class="icon">＋</span>
+            <span>左キャラ 立ち絵</span>
+          </div>
+        </div>
+        <div class="illust-slot" @click="triggerIllustrationUpload(1)">
+          <img v-if="illustrations[1]" :src="illustrations[1]">
+          <div class="plus" v-else>
+            <span class="icon">＋</span>
+            <span>右キャラ 立ち絵</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2人：右情報パネル -->
+      <div class="info-panel" v-if="mode==='duo'" :style="{flex: '1 0 0%'}">
+        <panel-content :panel="panels[1]" :panel-idx="1" :on-face-click="triggerFaceUpload" :on-add-face="addFace" :on-remove-face="removeFace" :on-color-click="triggerColorPicker" :on-remove-color="removeColor"></panel-content>
+      </div>
+
+    </div>
+  </div>
+
+  <button class="btn-primary" @click="downloadPNG" :disabled="generating">
+    {{ generating ? '作成中…' : 'PNG画像でダウンロード' }}
+  </button>
+
+  <input type="file" accept="image/*" ref="fileInput" style="display:none" @change="onFileChosen">
+  <input type="color" ref="colorInput" style="display:none" @input="onColorChosen">
+
+</div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+function todayStr(){
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function makePanel(){
+  return { text: '', faces: [null, null], palette: [] };
+}
+
+const PanelContent = {
+  props: ['panel', 'panelIdx', 'onFaceClick', 'onAddFace', 'onRemoveFace', 'onColorClick', 'onRemoveColor'],
+  template: `
+    <div class="panel-text">
+      <textarea v-model="panel.text" placeholder="キャラクター名・特徴・ご要望などを自由にご記入ください"></textarea>
+    </div>
+    <div class="panel-bottom">
+      <div class="face-grid">
+        <div class="face-slot" v-for="(f, i) in panel.faces" :key="i" @click="onFaceClick(panelIdx, i)">
+          <img v-if="f" :src="f">
+          <div class="plus" v-else>＋</div>
+        </div>
+      </div>
+      <div class="face-controls">
+        <button v-if="panel.faces.length < 4" @click.stop="onAddFace(panelIdx)">＋顔画像を追加</button>
+        <button v-if="panel.faces.length > 2" @click.stop="onRemoveFace(panelIdx)">−削除</button>
+      </div>
+      <div class="palette-row">
+        <div class="swatch" v-for="(c, i) in panel.palette" :key="i" :style="{background: c}" @click.stop="onRemoveColor(panelIdx, i)" title="クリックで削除"></div>
+        <button class="add-color-btn" @click.stop="onColorClick(panelIdx)">＋</button>
+      </div>
+    </div>
+  `
+};
+
+const { createApp } = Vue;
+
+createApp({
+  components: { PanelContent },
+  data(){
+    return {
+      mode: 'solo',
+      canvasW: 1500,
+      canvasH: 1000,
+      illustrations: [null, null],
+      panels: [makePanel(), makePanel()],
+      pendingUpload: null,
+      pendingColorPanel: null,
+      generating: false
+    };
+  },
+  methods: {
+    triggerIllustrationUpload(idx){
+      this.pendingUpload = { type: 'illustration', index: idx };
+      this.$refs.fileInput.click();
+    },
+    triggerFaceUpload(panelIdx, faceIdx){
+      this.pendingUpload = { type: 'face', panel: panelIdx, index: faceIdx };
+      this.$refs.fileInput.click();
+    },
+    onFileChosen(e){
+      const file = e.target.files[0];
+      if(!file || !this.pendingUpload) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const url = ev.target.result;
+        if(this.pendingUpload.type === 'illustration'){
+          this.illustrations[this.pendingUpload.index] = url;
+        }else{
+          this.panels[this.pendingUpload.panel].faces[this.pendingUpload.index] = url;
+        }
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    },
+    addFace(panelIdx){
+      if(this.panels[panelIdx].faces.length < 4) this.panels[panelIdx].faces.push(null);
+    },
+    removeFace(panelIdx){
+      if(this.panels[panelIdx].faces.length > 2) this.panels[panelIdx].faces.pop();
+    },
+    triggerColorPicker(panelIdx){
+      this.pendingColorPanel = panelIdx;
+      this.$refs.colorInput.click();
+    },
+    onColorChosen(e){
+      if(this.pendingColorPanel === null) return;
+      this.panels[this.pendingColorPanel].palette.push(e.target.value);
+    },
+    removeColor(panelIdx, colorIdx){
+      this.panels[panelIdx].palette.splice(colorIdx, 1);
+    },
+    async downloadPNG(){
+      this.generating = true;
+      await this.$nextTick();
+      try{
+        const canvas = await html2canvas(this.$refs.canvasArea, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const link = document.createElement('a');
+        link.download = `資料まとめ_${todayStr()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }catch(err){
+        console.error(err);
+        alert('画像の作成に失敗しました。もう一度お試しください。');
+      }finally{
+        this.generating = false;
+      }
+    }
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
