@@ -350,8 +350,8 @@
   <div class="preview-modal" v-show="previewModalVisible" :class="{ offscreen: capturing && !showPreview }" @click.self="showPreview = false">
     <div class="preview-modal-inner">
       <button class="preview-close" v-if="!(capturing && !showPreview)" @click="showPreview = false">✕ 閉じる</button>
-      <div class="preview-wrap">
-        <div class="preview" ref="previewArea">
+      <div class="preview-wrap" :style="previewWrapStyle">
+        <div class="preview" ref="previewArea" :style="previewStyle">
           <div class="doc-header">
             <h1>ヒアリングシート</h1>
             <div class="doc-meta">
@@ -536,6 +536,9 @@ createApp({
       generating: false,
       showPreview: false,
       capturing: false,
+      previewScale: 1,
+      previewNaturalWidth: 0,
+      previewNaturalHeight: 0,
       activeTab: PLAN_GROUPS[0].id,
       openSections: { production: false, usage: false, rush: false },
       form: blankForm()
@@ -563,6 +566,24 @@ createApp({
     },
     previewModalVisible(){
       return this.showPreview || this.capturing;
+    },
+    // 実際に見せているとき（キャプチャ中は除く）だけ縮小表示を適用
+    previewStyle(){
+      if(this.showPreview && this.previewScale < 1){
+        return { transform: `scale(${this.previewScale})`, transformOrigin: 'top left' };
+      }
+      return {};
+    },
+    previewWrapStyle(){
+      if(this.showPreview && this.previewScale < 1 && this.previewNaturalWidth){
+        return {
+          width: Math.ceil(this.previewNaturalWidth * this.previewScale) + 'px',
+          height: Math.ceil(this.previewNaturalHeight * this.previewScale) + 'px',
+          overflow: 'hidden',
+          margin: '0 auto'
+        };
+      }
+      return {};
     },
     // プラン＋制作オプション＋利用オプションの合計（短納期の％計算の基準になります）
     baseSubtotal(){
@@ -615,10 +636,17 @@ createApp({
         delete this.form.productionQty['extra_person'];
       }
     },
+    showPreview(v){
+      if(v) this.recalcPreviewScale();
+    },
+    lineItems(){
+      if(this.showPreview) this.recalcPreviewScale();
+    },
     form: {
       deep: true,
       handler(v){
         try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(v)); }catch(e){ /* noop */ }
+        if(this.showPreview) this.recalcPreviewScale();
       }
     }
   },
@@ -690,6 +718,21 @@ createApp({
         if(raw) this.form = { ...blankForm(), ...JSON.parse(raw) };
       }catch(e){ /* noop */ }
     },
+    // 画面幅に合わせてプレビューの縮小率を計算（PC等、画面が十分広い場合は等倍のまま）
+    async recalcPreviewScale(){
+      if(!this.showPreview) return;
+      this.previewScale = 1;
+      await this.$nextTick();
+      const el = this.$refs.previewArea;
+      if(!el) return;
+      const naturalWidth = el.offsetWidth;
+      const naturalHeight = el.offsetHeight;
+      const available = window.innerWidth - 32;
+      const scale = Math.min(1, available / naturalWidth);
+      this.previewNaturalWidth = naturalWidth;
+      this.previewNaturalHeight = naturalHeight;
+      this.previewScale = scale;
+    },
     // プレビューが閉じているときは、ユーザーに見せずに（画面外に）
     // 一瞬だけ描画してキャプチャします
     async captureCanvas(){
@@ -756,6 +799,9 @@ createApp({
   },
   mounted(){
     this.loadDraft();
+    window.addEventListener('resize', () => {
+      if(this.showPreview) this.recalcPreviewScale();
+    });
   }
 }).mount('#app');
 </script>
