@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>かんたん見積もり</title>
+<title>ヒアリングシート</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -161,12 +161,11 @@
 <div id="app">
 
   <nav class="tool-nav">
-    <a href="estimate.html" class="active">かんたん見積もり</a>
-    <a href="reference-sheet.html">資料まとめシート</a>
+    <a href="estimate.html" class="active">ヒアリングシート</a>
   </nav>
 
   <div class="page-head">
-    <h1>かんたん見積もり</h1>
+    <h1>ヒアリングシート</h1>
     <p>プランと内容を選んで、その場で見積書PDFを作成できます。ダウンロードしたPDFをそのままご連絡ください。</p>
   </div>
 
@@ -382,28 +381,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
-/* ============================================================
-   ここから下の設定を、あなたのサービス内容に合わせて書き換えてください。
 
-   ・PLAN_GROUPS：プランのタブと、その中の描写範囲ごとの金額
-   ・PRODUCTION_OPTIONS：制作オプション（人物追加など）
-       priceType: 'percent' → 選んだ範囲の価格の◯%として計算
-       priceType: 'fixed'   → 固定の円額
-       hasQty: true         → 個数を選べるようにする
-   ・USAGE_OPTIONS：利用オプション（複数選択可）
-       priceType: 'fixed'   → 固定の円額
-       priceType: 'inquiry' → 金額を決めず「要相談」と表示する
-                              （value は使わないので何も書かなくてOK）
-   ・RUSH_OPTIONS：短納期対応（1つだけ選べる）
-       priceType: 'percent' → 「プラン＋制作オプション＋利用オプション」の
-                              合計金額に対する◯%として計算されます
-   ・COLOR_MODES：色形式の選択肢
-   ・PAYMENT_METHODS：支払い方法の選択肢
-
-   ★ value に日本語や記号（「要相談」など）をそのまま書くと、
-     JavaScriptとしてエラーになりページ全体が止まります。
-     金額が決まっていない項目は priceType: 'inquiry' を使ってください。
-   ============================================================ */
 const PLAN_GROUPS = [
   {
     id: 'kani', name: '簡易イラスト', note: 'ペアのみ・商用不可',
@@ -461,10 +439,7 @@ const PAYMENT_METHODS = [
   '銀行振込',
   'PayPay',
 ];
-/* ============================================================
-   編集はここまで。この下は仕組みの部分なので、通常は
-   触らなくて大丈夫です。
-   ============================================================ */
+
 
 const DRAFT_KEY = 'estimate_tool_draft_v1';
 
