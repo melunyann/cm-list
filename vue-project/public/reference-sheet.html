@@ -45,24 +45,39 @@
   }
   .btn-primary:hover{ background: #14190f; }
 
-  .canvas-wrap{ overflow-x: auto; background: var(--cd); border: 1px solid var(--ln); border-radius: var(--rd); padding: 20px; }
+  .canvas-wrap{ background: var(--cd); border: 1px solid var(--ln); border-radius: var(--rd); padding: 20px; overflow: hidden; }
+  .canvas-scale-box{ position: relative; }
 
-  .sheet{ display:flex; gap: 0; background:#fff; }
+  .sheet{ display:flex; gap: 0; background:#fff; position: absolute; top: 0; left: 0; }
   .info-panel{ display:flex; flex-direction:column; border: 1px solid #ddd; }
-  .panel-text{ flex: 0 0 42%; border-bottom: 1px solid #ddd; padding: 14px; }
-  .panel-text textarea{
-    width: 100%; height: 100%; border: none; resize: none; outline: none;
-    font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 14px; line-height: 1.7; color: #26302A;
+  .panel-text{
+    flex: 0 0 56%; border-bottom: 1px solid #ddd; padding: 12px 14px;
+    overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
   }
-  .panel-bottom{ flex: 1; padding: 12px 14px; display:flex; flex-direction:column; gap: 10px; }
+  .field-block label{
+    display:block; font-size: 11px; font-weight: 700; color: #7a8a76;
+    margin-bottom: 3px; letter-spacing: .04em;
+  }
+  .field-block textarea{
+    width: 100%; border: 1px solid #eee; border-radius: 2px; resize: vertical;
+    outline: none; padding: 5px 7px;
+    font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 12.5px; line-height: 1.6; color: #26302A;
+  }
+  .field-block textarea:focus{ border-color: var(--ac); }
+
+  .panel-bottom{ flex: 1; padding: 10px 14px; display:flex; flex-direction:column; gap: 8px; min-height: 0; }
   .face-grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .face-slot{
+  .img-slot{
     position: relative; width: 100%; background: #F4F4F2; border: 1px dashed var(--ls);
     border-radius: 2px; cursor: pointer; overflow: hidden;
   }
-  .face-slot::before{ content:''; display:block; padding-top: 100%; }
-  .face-slot img{ position:absolute; inset:0; width:100%; height:100%; object-fit: cover; }
-  .face-slot .plus{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color: var(--if); font-size: 22px; }
+  .img-slot.face-slot::before{ content:''; display:block; padding-top: 100%; }
+  .img-slot .slot-img{ position:absolute; inset:0; width:100%; height:100%; object-fit: cover; }
+  .img-slot .plus{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color: var(--if); font-size: 22px; }
+  .img-slot .edit-mark{
+    position:absolute; bottom: 4px; right: 4px; background: rgba(38,48,42,.65); color:#fff;
+    font-size: 10px; padding: 2px 6px; border-radius: 8px;
+  }
   .face-controls{ display:flex; gap: 8px; }
   .face-controls button{
     background: none; border: 1px solid var(--ls); color: var(--is); font-size: 11.5px;
@@ -78,16 +93,31 @@
   }
   .add-color-btn:hover{ border-color: var(--ac); color: var(--ac); }
 
-  .illust-slot{
-    position: relative; background: #F4F4F2; border: 1px dashed var(--ls); cursor: pointer; overflow: hidden;
-  }
-  .illust-slot img{ position:absolute; inset:0; width:100%; height:100%; object-fit: contain; background:#fff; }
-  .illust-slot .plus{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color: var(--if); font-size: 13px; }
-  .illust-slot .plus .icon{ font-size: 26px; }
-
   .illust-pair{ display:flex; flex-direction:row; }
-  .illust-pair .illust-slot{ flex: 1; }
-  .illust-pair .illust-slot + .illust-slot{ border-left: none; }
+  .illust-pair .img-slot{ flex: 1; }
+  .illust-pair .img-slot + .img-slot{ border-left: none; }
+
+  /* ===== crop modal ===== */
+  .crop-overlay{
+    position: fixed; inset: 0; background: rgba(20,25,20,.6);
+    display:flex; align-items:center; justify-content:center; z-index: 1000; padding: 20px;
+  }
+  .crop-box{ background:#fff; border-radius: 6px; padding: 18px; width: 100%; max-width: 420px; }
+  .crop-box h4{ margin: 0 0 12px; font-size: 13px; color: var(--is); font-weight: 500; }
+  .crop-frame{
+    position: relative; width: 100%; overflow: hidden; background:#eee; border-radius: 4px;
+    cursor: grab; touch-action: none; user-select: none;
+  }
+  .crop-frame:active{ cursor: grabbing; }
+  .crop-frame img{ position:absolute; top:50%; left:50%; width:100%; height:100%; object-fit: cover; }
+  .crop-controls{ display:flex; align-items:center; gap: 10px; margin-top: 14px; }
+  .crop-controls input[type=range]{ flex: 1; }
+  .crop-actions{ display:flex; justify-content: space-between; margin-top: 16px; }
+  .crop-actions button{
+    font-family: inherit; font-size: 13px; padding: 8px 16px; border-radius: var(--rd); cursor: pointer;
+  }
+  .btn-done{ background: var(--ik); color:#fff; border:none; }
+  .btn-remove{ background:#fff; border:1px solid var(--dg); color: var(--dg); }
 
   @media (prefers-reduced-motion: reduce){ *{ transition: none !important; } }
 </style>
@@ -102,7 +132,7 @@
 
   <div class="page-head">
     <h1>資料まとめシート</h1>
-    <p>キャラクターの立ち絵・顔画像・カラーパレット・ご依頼内容を、1枚の画像にまとめてダウンロードできます。</p>
+    <p>キャラクターの立ち絵・顔画像・カラーパレット・ご依頼内容を、1枚の画像にまとめてダウンロードできます。画像はクリックすると位置とズームを調整できます。</p>
   </div>
 
   <div class="mode-tabs">
@@ -110,51 +140,47 @@
     <button :class="{active: mode==='duo'}" @click="mode='duo'">2人</button>
   </div>
 
-  <div class="canvas-wrap">
-    <div class="sheet" ref="canvasArea" :style="{width: canvasW + 'px', height: canvasH + 'px'}">
+  <div class="canvas-wrap" ref="canvasWrap">
+    <div class="canvas-scale-box" :style="{ width: (canvasW*previewScale)+'px', height: (canvasH*previewScale)+'px' }">
+      <div class="sheet" ref="canvasArea" :style="{ width: canvasW+'px', height: canvasH+'px', transform: 'scale('+previewScale+')', transformOrigin: 'top left' }">
 
-      <!-- 1人：左情報パネル -->
-      <div class="info-panel" v-if="mode==='solo'" :style="{flex: '2 0 0%'}">
-        <panel-content :panel="panels[0]" :panel-idx="0" :on-face-click="triggerFaceUpload" :on-add-face="addFace" :on-remove-face="removeFace" :on-color-click="triggerColorPicker" :on-remove-color="removeColor"></panel-content>
-      </div>
-
-      <!-- 2人：左情報パネル -->
-      <div class="info-panel" v-if="mode==='duo'" :style="{flex: '1 0 0%'}">
-        <panel-content :panel="panels[0]" :panel-idx="0" :on-face-click="triggerFaceUpload" :on-add-face="addFace" :on-remove-face="removeFace" :on-color-click="triggerColorPicker" :on-remove-color="removeColor"></panel-content>
-      </div>
-
-      <!-- 1人：立ち絵1枚 -->
-      <div class="illust-slot" v-if="mode==='solo'" :style="{flex: '1 0 0%'}" @click="triggerIllustrationUpload(0)">
-        <img v-if="illustrations[0]" :src="illustrations[0]">
-        <div class="plus" v-else>
-          <span class="icon">＋</span>
-          <span>立ち絵・膝上イラスト</span>
+        <!-- 1人：左情報パネル -->
+        <div class="info-panel" v-if="mode==='solo'" :style="{flex: '2 0 0%'}">
+          <panel-content :panel="panels[0]" :panel-idx="0" :on-face-click="onFaceClick" :on-add-face="addFace" :on-remove-face="removeFace" :on-color-click="triggerColorPicker" :on-remove-color="removeColor"></panel-content>
         </div>
-      </div>
 
-      <!-- 2人：立ち絵2枚（左キャラ／右キャラ） -->
-      <div class="illust-pair" v-if="mode==='duo'" :style="{flex: '1.2 0 0%'}">
-        <div class="illust-slot" @click="triggerIllustrationUpload(0)">
-          <img v-if="illustrations[0]" :src="illustrations[0]">
-          <div class="plus" v-else>
-            <span class="icon">＋</span>
-            <span>左キャラ 立ち絵</span>
+        <!-- 2人：左情報パネル -->
+        <div class="info-panel" v-if="mode==='duo'" :style="{flex: '1 0 0%'}">
+          <panel-content :panel="panels[0]" :panel-idx="0" :on-face-click="onFaceClick" :on-add-face="addFace" :on-remove-face="removeFace" :on-color-click="triggerColorPicker" :on-remove-color="removeColor"></panel-content>
+        </div>
+
+        <!-- 1人：立ち絵1枚 -->
+        <div class="img-slot" v-if="mode==='solo'" :style="{flex: '1 0 0%'}" @click="onIllustClick(0)">
+          <img class="slot-img" v-if="illustrations[0].url" :src="illustrations[0].url" :style="imgTransform(illustrations[0])">
+          <div class="plus" v-else><span>＋</span></div>
+          <div class="edit-mark" v-if="illustrations[0].url">位置調整</div>
+        </div>
+
+        <!-- 2人：立ち絵2枚 -->
+        <div class="illust-pair" v-if="mode==='duo'" :style="{flex: '1.2 0 0%'}">
+          <div class="img-slot" @click="onIllustClick(0)">
+            <img class="slot-img" v-if="illustrations[0].url" :src="illustrations[0].url" :style="imgTransform(illustrations[0])">
+            <div class="plus" v-else><span>＋</span></div>
+            <div class="edit-mark" v-if="illustrations[0].url">位置調整</div>
+          </div>
+          <div class="img-slot" @click="onIllustClick(1)">
+            <img class="slot-img" v-if="illustrations[1].url" :src="illustrations[1].url" :style="imgTransform(illustrations[1])">
+            <div class="plus" v-else><span>＋</span></div>
+            <div class="edit-mark" v-if="illustrations[1].url">位置調整</div>
           </div>
         </div>
-        <div class="illust-slot" @click="triggerIllustrationUpload(1)">
-          <img v-if="illustrations[1]" :src="illustrations[1]">
-          <div class="plus" v-else>
-            <span class="icon">＋</span>
-            <span>右キャラ 立ち絵</span>
-          </div>
+
+        <!-- 2人：右情報パネル -->
+        <div class="info-panel" v-if="mode==='duo'" :style="{flex: '1 0 0%'}">
+          <panel-content :panel="panels[1]" :panel-idx="1" :on-face-click="onFaceClick" :on-add-face="addFace" :on-remove-face="removeFace" :on-color-click="triggerColorPicker" :on-remove-color="removeColor"></panel-content>
         </div>
-      </div>
 
-      <!-- 2人：右情報パネル -->
-      <div class="info-panel" v-if="mode==='duo'" :style="{flex: '1 0 0%'}">
-        <panel-content :panel="panels[1]" :panel-idx="1" :on-face-click="triggerFaceUpload" :on-add-face="addFace" :on-remove-face="removeFace" :on-color-click="triggerColorPicker" :on-remove-color="removeColor"></panel-content>
       </div>
-
     </div>
   </div>
 
@@ -164,6 +190,24 @@
 
   <input type="file" accept="image/*" ref="fileInput" style="display:none" @change="onFileChosen">
   <input type="color" ref="colorInput" style="display:none" @change="onColorChosen">
+
+  <!-- ===== crop modal ===== -->
+  <div class="crop-overlay" v-if="editing" @click.self="closeEditor">
+    <div class="crop-box">
+      <h4>位置とズームを調整（ドラッグで移動）</h4>
+      <div class="crop-frame" :style="{ aspectRatio: editing.aspect }" ref="cropFrame" @mousedown="startDrag" @touchstart="startDrag">
+        <img :src="editingSlot.url" :style="imgTransform(editingSlot)">
+      </div>
+      <div class="crop-controls">
+        <span style="font-size:12px;color:#888;">ズーム</span>
+        <input type="range" min="1" max="3" step="0.01" v-model.number="editingSlot.scale">
+      </div>
+      <div class="crop-actions">
+        <button class="btn-remove" @click="removeEditingImage">画像を削除</button>
+        <button class="btn-done" @click="closeEditor">完了</button>
+      </div>
+    </div>
+  </div>
 
 </div>
 
@@ -176,21 +220,57 @@ function todayStr(){
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+function makeImageSlot(){
+  return { url: null, scale: 1, tx: 0, ty: 0 };
+}
+
 function makePanel(){
-  return { text: '', faces: [null, null], palette: [] };
+  return {
+    basic: '', appearance: '', hobby: '', likes: '', dislikes: '', personality: '', ng: '',
+    faces: [makeImageSlot(), makeImageSlot()],
+    palette: []
+  };
 }
 
 const PanelContent = {
   props: ['panel', 'panelIdx', 'onFaceClick', 'onAddFace', 'onRemoveFace', 'onColorClick', 'onRemoveColor'],
   template: `
     <div class="panel-text">
-      <textarea v-model="panel.text" placeholder="キャラクター名・特徴・ご要望などを自由にご記入ください"></textarea>
+      <div class="field-block">
+        <label>基礎情報（名前・性別・身長体重・利き手・スリーサイズ・MBTIなど）</label>
+        <textarea v-model="panel.basic" rows="2"></textarea>
+      </div>
+      <div class="field-block">
+        <label>容姿情報（箇条書き推奨）</label>
+        <textarea v-model="panel.appearance" rows="3"></textarea>
+      </div>
+      <div class="field-block">
+        <label>趣味・特技</label>
+        <textarea v-model="panel.hobby" rows="2"></textarea>
+      </div>
+      <div class="field-block">
+        <label>好きなもの</label>
+        <textarea v-model="panel.likes" rows="2"></textarea>
+      </div>
+      <div class="field-block">
+        <label>苦手なもの</label>
+        <textarea v-model="panel.dislikes" rows="2"></textarea>
+      </div>
+      <div class="field-block">
+        <label>人物について（性格など）</label>
+        <textarea v-model="panel.personality" rows="2"></textarea>
+      </div>
+      <div class="field-block">
+        <label>NG（この描写はやめてほしい／ここは絶対忘れないでほしい など）</label>
+        <textarea v-model="panel.ng" rows="2"></textarea>
+      </div>
     </div>
     <div class="panel-bottom">
       <div class="face-grid">
-        <div class="face-slot" v-for="(f, i) in panel.faces" :key="i" @click="onFaceClick(panelIdx, i)">
-          <img v-if="f" :src="f">
+        <div class="img-slot face-slot" v-for="(f, i) in panel.faces" :key="i" @click="onFaceClick(panelIdx, i)">
+          <img class="slot-img" v-if="f.url" :src="f.url" :style="$root.imgTransform(f)">
           <div class="plus" v-else>＋</div>
+          <div class="edit-mark" v-if="f.url">位置調整</div>
         </div>
       </div>
       <div class="face-controls">
@@ -207,28 +287,58 @@ const PanelContent = {
 
 const { createApp } = Vue;
 
-createApp({
+const app = createApp({
   components: { PanelContent },
   data(){
     return {
       mode: 'solo',
       canvasW: 1500,
       canvasH: 1000,
-      illustrations: [null, null],
+      previewScale: 1,
+      illustrations: [makeImageSlot(), makeImageSlot()],
       panels: [makePanel(), makePanel()],
       pendingUpload: null,
       pendingColorPanel: null,
+      editing: null, // { target:'illustration', index:0, aspect:'...' } | { target:'face', panel:0, index:0, aspect:'1/1' }
       generating: false
     };
   },
+  computed: {
+    editingSlot(){
+      if(!this.editing) return { url: null, scale: 1, tx: 0, ty: 0 };
+      if(this.editing.target === 'illustration') return this.illustrations[this.editing.index];
+      return this.panels[this.editing.panel].faces[this.editing.index];
+    }
+  },
   methods: {
-    triggerIllustrationUpload(idx){
-      this.pendingUpload = { type: 'illustration', index: idx };
-      this.$refs.fileInput.click();
+    imgTransform(slot){
+      return { transform: `translate(${slot.tx}%, ${slot.ty}%) scale(${slot.scale})` };
     },
-    triggerFaceUpload(panelIdx, faceIdx){
-      this.pendingUpload = { type: 'face', panel: panelIdx, index: faceIdx };
-      this.$refs.fileInput.click();
+    updateScale(){
+      const wrapEl = this.$refs.canvasWrap;
+      if(!wrapEl) return;
+      const available = wrapEl.clientWidth - 40;
+      this.previewScale = Math.max(0.1, Math.min(1, available / this.canvasW));
+    },
+    onFaceClick(panelIdx, faceIdx){
+      const slot = this.panels[panelIdx].faces[faceIdx];
+      if(slot.url){
+        this.editing = { target: 'face', panel: panelIdx, index: faceIdx, aspect: '1 / 1' };
+      }else{
+        this.pendingUpload = { type: 'face', panel: panelIdx, index: faceIdx };
+        this.$refs.fileInput.click();
+      }
+    },
+    onIllustClick(idx){
+      const slot = this.illustrations[idx];
+      if(slot.url){
+        const widthFrac = this.mode === 'solo' ? (1 / 3) : ((1.2 / 3.2) / 2);
+        const w = Math.round(this.canvasW * widthFrac);
+        this.editing = { target: 'illustration', index: idx, aspect: `${w} / ${this.canvasH}` };
+      }else{
+        this.pendingUpload = { type: 'illustration', index: idx };
+        this.$refs.fileInput.click();
+      }
     },
     onFileChosen(e){
       const file = e.target.files[0];
@@ -236,17 +346,19 @@ createApp({
       const reader = new FileReader();
       reader.onload = ev => {
         const url = ev.target.result;
+        const slot = makeImageSlot();
+        slot.url = url;
         if(this.pendingUpload.type === 'illustration'){
-          this.illustrations[this.pendingUpload.index] = url;
+          this.illustrations[this.pendingUpload.index] = slot;
         }else{
-          this.panels[this.pendingUpload.panel].faces[this.pendingUpload.index] = url;
+          this.panels[this.pendingUpload.panel].faces[this.pendingUpload.index] = slot;
         }
       };
       reader.readAsDataURL(file);
       e.target.value = '';
     },
     addFace(panelIdx){
-      if(this.panels[panelIdx].faces.length < 4) this.panels[panelIdx].faces.push(null);
+      if(this.panels[panelIdx].faces.length < 4) this.panels[panelIdx].faces.push(makeImageSlot());
     },
     removeFace(panelIdx){
       if(this.panels[panelIdx].faces.length > 2) this.panels[panelIdx].faces.pop();
@@ -262,8 +374,52 @@ createApp({
     removeColor(panelIdx, colorIdx){
       this.panels[panelIdx].palette.splice(colorIdx, 1);
     },
+    closeEditor(){
+      this.editing = null;
+    },
+    removeEditingImage(){
+      const fresh = makeImageSlot();
+      if(this.editing.target === 'illustration'){
+        this.illustrations[this.editing.index] = fresh;
+      }else{
+        this.panels[this.editing.panel].faces[this.editing.index] = fresh;
+      }
+      this.editing = null;
+    },
+    startDrag(e){
+      e.preventDefault();
+      const slot = this.editingSlot;
+      const isTouch = e.type === 'touchstart';
+      const startX = isTouch ? e.touches[0].clientX : e.clientX;
+      const startY = isTouch ? e.touches[0].clientY : e.clientY;
+      const startTX = slot.tx, startTY = slot.ty;
+      const rect = this.$refs.cropFrame.getBoundingClientRect();
+
+      const move = (ev) => {
+        const cx = ev.type === 'touchmove' ? ev.touches[0].clientX : ev.clientX;
+        const cy = ev.type === 'touchmove' ? ev.touches[0].clientY : ev.clientY;
+        const dx = cx - startX, dy = cy - startY;
+        let nx = startTX + (dx / rect.width) * 100;
+        let ny = startTY + (dy / rect.height) * 100;
+        nx = Math.max(-50, Math.min(50, nx));
+        ny = Math.max(-50, Math.min(50, ny));
+        slot.tx = nx; slot.ty = ny;
+      };
+      const up = () => {
+        window.removeEventListener('mousemove', move);
+        window.removeEventListener('mouseup', up);
+        window.removeEventListener('touchmove', move);
+        window.removeEventListener('touchend', up);
+      };
+      window.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', up);
+      window.addEventListener('touchmove', move, { passive: false });
+      window.addEventListener('touchend', up);
+    },
     async downloadPNG(){
       this.generating = true;
+      const savedScale = this.previewScale;
+      this.previewScale = 1;
       await this.$nextTick();
       try{
         const canvas = await html2canvas(this.$refs.canvasArea, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
@@ -275,11 +431,17 @@ createApp({
         console.error(err);
         alert('画像の作成に失敗しました。もう一度お試しください。');
       }finally{
+        this.previewScale = savedScale;
         this.generating = false;
       }
     }
+  },
+  mounted(){
+    this.updateScale();
+    window.addEventListener('resize', this.updateScale);
   }
-}).mount('#app');
+});
+const vm = app.mount('#app');
 </script>
 </body>
 </html>
