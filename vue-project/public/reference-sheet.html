@@ -24,6 +24,14 @@
   .page-head h1{ font-family: 'Zen Old Mincho', serif; font-weight: 700; font-size: 24px; margin: 0 0 6px; letter-spacing: .05em; }
   .page-head p{ font-size: 13px; color: var(--is); margin: 0; }
 
+  .tool-nav{ display:flex; gap: 4px; margin-bottom: 16px; }
+  .tool-nav a{
+    background: var(--cd); border: 1px solid var(--ls); color: var(--is);
+    padding: 8px 18px; font-size: 13px; text-decoration: none; border-radius: var(--rd);
+  }
+  .tool-nav a.active{ background: var(--ik); color: #fff; border-color: var(--ik); }
+  .tool-nav a:hover:not(.active){ border-color: var(--ac); color: var(--ac); }
+
   .mode-tabs{ display:flex; gap: 4px; margin-bottom: 18px; }
   .mode-tabs button{
     background: var(--cd); border: 1px solid var(--ls); color: var(--is);
@@ -86,6 +94,11 @@
 </head>
 <body>
 <div id="app">
+
+  <nav class="tool-nav">
+    <a href="estimate.html">かんたん見積もり</a>
+    <a href="reference-sheet.html" class="active">資料まとめシート</a>
+  </nav>
 
   <div class="page-head">
     <h1>資料まとめシート</h1>
