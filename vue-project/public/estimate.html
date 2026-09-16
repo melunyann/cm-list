@@ -158,24 +158,25 @@
     box-shadow: 0 0 0 1px var(--ln); font-family: 'Zen Kaku Gothic New', sans-serif;
   }
   .doc-header{ display:flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--ik); padding-bottom: 10px; margin-bottom: 22px; }
-  .doc-header h1{ font-family: 'Zen Old Mincho', serif; font-size: 26px; margin: 0; letter-spacing: .1em; }
-  .doc-meta{ text-align: right; font-size: 11.5px; color: var(--is); line-height: 1.7; }
-  .doc-to{ font-size: 16px; font-weight: 600; border-bottom: 1px solid var(--ik); padding-bottom: 6px; display: inline-block; min-width: 200px; margin-bottom: 20px; }
+  .doc-header h1{ font-family: 'Zen Old Mincho', serif; font-size: 22px; margin: 0; letter-spacing: .1em; }
+  .doc-meta{ text-align: right; font-size: 10.5px; color: var(--is); line-height: 1.7; }
+  .doc-to{ font-size: 14px; font-weight: 600; border-bottom: 1px solid var(--ik); padding-bottom: 6px; display: inline-block; min-width: 200px; margin-bottom: 20px; }
+  .doc-contact{ font-size: 11px; color: var(--is); margin: -14px 0 20px; }
 
   .doc-table{ width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-  .doc-table th{ text-align: left; font-size: 11.5px; font-weight: 500; color: var(--is); background: var(--pp); padding: 8px 10px; border: 1px solid var(--ls); }
-  .doc-table td{ font-size: 13px; padding: 9px 10px; border: 1px solid var(--ln); }
+  .doc-table th{ text-align: left; font-size: 10.5px; font-weight: 500; color: var(--is); background: var(--pp); padding: 8px 10px; border: 1px solid var(--ls); }
+  .doc-table td{ font-size: 12px; padding: 9px 10px; border: 1px solid var(--ln); }
   .doc-table td.num, .doc-table th:last-child{ text-align: right; }
 
-  .doc-totals{ margin-left: auto; width: 260px; font-size: 13.5px; margin-bottom: 8px; }
-  .doc-totals .grand{ display:flex; justify-content: space-between; border-top: 2px solid var(--ik); font-weight: 700; font-size: 15px; padding-top: 10px; }
-  .doc-disclaimer{ font-size: 11px; color: var(--dg); text-align: right; margin-bottom: 20px; }
+  .doc-totals{ margin-left: auto; width: 260px; font-size: 12.5px; margin-bottom: 8px; }
+  .doc-totals .grand{ display:flex; justify-content: space-between; border-top: 2px solid var(--ik); font-weight: 700; font-size: 13.5px; padding-top: 10px; }
+  .doc-disclaimer{ font-size: 10px; color: var(--dg); text-align: right; margin-bottom: 20px; }
 
   .doc-block{ margin-bottom: 16px; }
-  .doc-block h4{ font-size: 12px; color: var(--is); margin: 0 0 6px; }
-  .doc-block p{ font-size: 13px; white-space: pre-wrap; margin: 0; line-height: 1.8; }
+  .doc-block h4{ font-size: 11px; color: var(--is); margin: 0 0 6px; }
+  .doc-block p{ font-size: 12px; white-space: pre-wrap; margin: 0; line-height: 1.8; }
 
-  .empty-note{ color: var(--if); font-size: 12.5px; padding: 4px 2px; }
+  .empty-note{ color: var(--if); font-size: 11.5px; padding: 4px 2px; }
 
   @media (prefers-reduced-motion: reduce){ *{ transition: none !important; } }
 </style>
@@ -361,6 +362,7 @@
           </div>
 
           <div class="doc-to">{{ form.clientName || '（お名前未入力）' }} 様</div>
+          <p class="doc-contact" v-if="form.contact">ご連絡先：{{ form.contact }}</p>
 
           <table class="doc-table" v-if="lineItems.length">
             <thead><tr><th>内容</th><th>金額</th></tr></thead>
