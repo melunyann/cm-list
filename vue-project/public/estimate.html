@@ -398,21 +398,29 @@ const PLAN_GROUPS = [
 
 const PRODUCTION_OPTIONS = [
   { id: 'extra_person', name: '人物追加', priceType: 'percent', value: 100, hasQty: true },
+  { id: 'extra_person', name: '小物差分', priceType: 'fixed', value: 500 },
+  { id: 'extra_person', name: '表情差分', priceType: 'fixed', value: 1000 },
+  { id: 'extra_person', name: '背景追加', priceType: 'fixed', value: 2000 },
+  { id: 'extra_person', name: '高解像度化（2500px以上）', priceType: 'fixed', value: 1000 },
+  { id: 'extra_person', name: 'PSD形式（レイヤー未統合データ）', priceType: 'fixed', value: 2000 },
+  { id: 'extra_person', name: 'イメレス・トレス構図指定', priceType: 'fixed', value: 1500 },
 ];
 
 const USAGE_OPTIONS = [
-  { id: 'commercial',    name: '商用利用ライセンス',            priceType: 'fixed', value: 3000 },
-  { id: 'extra_format',  name: 'データ形式追加（PSD/AIなど）',  priceType: 'fixed', value: 1000 },
+  { id: 'commercial',    name: '実績非公開',            priceType: 'fixed', value: 1500 },
+  { id: 'commercial',    name: '商用利用',            priceType: 'fixed', value: 3000 },
+  { id: 'extra_format',  name: 'プレゼント用途',  priceType: 'fixed', value: 要相談 },
 ];
 
 const RUSH_OPTIONS = [
-  { id: 'rush3', name: '特急対応（3日以内）', priceType: 'percent', value: 30 },
+  { id: 'rush3', name: '特急対応（3日以内）', priceType: 'percent', value: 150 },
+  { id: 'rush3', name: '15日以内', priceType: 'percent', value: 100 },
 ];
 
 const COLOR_MODES = ['CMYK', 'RGB', '相談したい'];
 
 const PAYMENT_METHODS = [
-  'プラットフォーム経由（先払い）',
+  'つなぐ',
   '銀行振込',
   'PayPay',
 ];
