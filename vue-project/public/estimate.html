@@ -320,7 +320,7 @@
           {{ generating ? '作成中…' : 'PNGでダウンロード' }}
         </button>
       </div>
-      <p class="download-hint" v-else>DMなどPDFが送れない場合は、PNG（画像）をご利用ください。</p>
+      <p class="download-hint" v-if="!form.rangeId">DMなどPDFが送れない場合は、PNG（画像）をご利用ください。</p>
       <button class="btn-ghost" @click="showPreview = !showPreview">
         {{ showPreview ? 'プレビューを閉じる' : 'プレビューを確認' }}
       </button>
