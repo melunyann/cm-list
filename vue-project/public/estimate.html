@@ -122,6 +122,11 @@
   }
   .btn-primary:hover{ background: #14190f; }
   .btn-primary:disabled{ opacity: .5; cursor: default; }
+  .download-row{ display: flex; gap: 8px; margin-top: 6px; }
+  .download-row .btn-primary{ margin-top: 0; }
+  .btn-primary.secondary{ background: #fff; color: var(--ik); border: 1px solid var(--ls); }
+  .btn-primary.secondary:hover{ background: var(--pp); }
+  .download-hint{ font-size: 11px; color: var(--is); margin: -2px 0 2px; text-align: center; }
   .btn-ghost{
     background: var(--cd); border: 1px solid var(--ls); color: var(--is);
     padding: 8px 14px; border-radius: var(--rd); font-size: 12.5px; cursor: pointer; width: 100%;
@@ -307,9 +312,16 @@
         <textarea v-model="form.notes" rows="3" placeholder="ご要望やご質問があればご記入ください"></textarea>
       </div>
 
-      <button class="btn-primary" @click="downloadPDF" :disabled="generating || !form.rangeId">
-        {{ generating ? '作成中…' : (form.rangeId ? '見積書PDFをダウンロード' : 'プラン内容を選んでください') }}
-      </button>
+      <div class="download-row">
+        <button class="btn-primary" @click="downloadPDF" :disabled="generating || !form.rangeId">
+          {{ generating ? '作成中…' : 'PDFでダウンロード' }}
+        </button>
+        <button class="btn-primary secondary" @click="downloadPNG" :disabled="generating || !form.rangeId">
+          {{ generating ? '作成中…' : 'PNGでダウンロード' }}
+        </button>
+      </div>
+      <p class="download-hint" v-if="!form.rangeId">プラン内容を選んでください</p>
+      <p class="download-hint" v-else>DMなどPDFが送れない場合は、PNG（画像）をご利用ください。</p>
       <button class="btn-ghost" @click="showPreview = !showPreview">
         {{ showPreview ? 'プレビューを閉じる' : 'プレビューを確認' }}
       </button>
@@ -439,7 +451,6 @@ const PAYMENT_METHODS = [
   '銀行振込',
   'PayPay',
 ];
-
 
 const DRAFT_KEY = 'estimate_tool_draft_v1';
 
@@ -631,15 +642,22 @@ createApp({
         if(raw) this.form = { ...blankForm(), ...JSON.parse(raw) };
       }catch(e){ /* noop */ }
     },
-    async downloadPDF(){
-      if(!this.form.rangeId) return;
-      this.generating = true;
+    async captureCanvas(){
       const wasHidden = !this.showPreview;
       if(wasHidden) this.showPreview = true;
       await this.$nextTick();
       try{
         const el = this.$refs.previewArea;
-        const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        return await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      }finally{
+        if(wasHidden) this.showPreview = false;
+      }
+    },
+    async downloadPDF(){
+      if(!this.form.rangeId) return;
+      this.generating = true;
+      try{
+        const canvas = await this.captureCanvas();
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
         const pageWidthMm = 210;
@@ -667,7 +685,25 @@ createApp({
         alert('PDFの作成に失敗しました。もう一度お試しください。');
       }finally{
         this.generating = false;
-        if(wasHidden) this.showPreview = false;
+      }
+    },
+    async downloadPNG(){
+      if(!this.form.rangeId) return;
+      this.generating = true;
+      try{
+        const canvas = await this.captureCanvas();
+        const safeName = (this.form.clientName || 'お見積もり').replace(/[\\/:*?"<>|]/g, '');
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/png');
+        a.download = `お見積書_${safeName}_${this.today}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }catch(err){
+        console.error(err);
+        alert('画像の作成に失敗しました。もう一度お試しください。');
+      }finally{
+        this.generating = false;
       }
     }
   },
