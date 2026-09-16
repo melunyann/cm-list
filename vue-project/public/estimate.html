@@ -34,6 +34,15 @@
 
   .layout{ display: flex; flex-direction: column; gap: 24px; }
 
+  .sticky-summary{
+    position: sticky; top: 0; z-index: 50;
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--ik); color: #fff; padding: 10px 16px; border-radius: var(--rd);
+    margin-bottom: 16px; box-shadow: 0 3px 10px rgba(0,0,0,.15);
+  }
+  .sticky-summary-label{ font-size: 12px; color: #C9D0C3; }
+  .sticky-summary-amount{ font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; }
+
   .form-card{
     width: 100%; max-width: 210mm; margin: 0 auto;
     background: var(--cd); border: 1px solid var(--ln); border-radius: var(--rd);
@@ -159,6 +168,11 @@
   <div class="page-head">
     <h1>かんたん見積もり</h1>
     <p>プランと内容を選んで、その場で見積書PDFを作成できます。ダウンロードしたPDFをそのままご連絡ください。</p>
+  </div>
+
+  <div class="sticky-summary" v-if="lineItems.length">
+    <span class="sticky-summary-label">現在の概算</span>
+    <span class="sticky-summary-amount">¥{{ total.toLocaleString('ja-JP') }}〜</span>
   </div>
 
   <div class="layout">
@@ -297,11 +311,14 @@
       <button class="btn-primary" @click="downloadPDF" :disabled="generating || !form.rangeId">
         {{ generating ? '作成中…' : (form.rangeId ? '見積書PDFをダウンロード' : 'プラン内容を選んでください') }}
       </button>
+      <button class="btn-ghost" @click="showPreview = !showPreview">
+        {{ showPreview ? 'プレビューを閉じる' : 'プレビューを確認' }}
+      </button>
       <button class="btn-ghost" @click="resetForm">入力内容をクリア</button>
     </div>
 
     <!-- ===== プレビュー ===== -->
-    <div class="preview-wrap">
+    <div class="preview-wrap" v-show="showPreview">
       <div class="preview" ref="previewArea">
         <div class="doc-header">
           <h1>ヒアリングシート</h1>
@@ -365,28 +382,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
-/* ============================================================
-   ここから下の設定を、あなたのサービス内容に合わせて書き換えてください。
 
-   ・PLAN_GROUPS：プランのタブと、その中の描写範囲ごとの金額
-   ・PRODUCTION_OPTIONS：制作オプション（人物追加など）
-       priceType: 'percent' → 選んだ範囲の価格の◯%として計算
-       priceType: 'fixed'   → 固定の円額
-       hasQty: true         → 個数を選べるようにする
-   ・USAGE_OPTIONS：利用オプション（複数選択可）
-       priceType: 'fixed'   → 固定の円額
-       priceType: 'inquiry' → 金額を決めず「要相談」と表示する
-                              （value は使わないので何も書かなくてOK）
-   ・RUSH_OPTIONS：短納期対応（1つだけ選べる）
-       priceType: 'percent' → 「プラン＋制作オプション＋利用オプション」の
-                              合計金額に対する◯%として計算されます
-   ・COLOR_MODES：色形式の選択肢
-   ・PAYMENT_METHODS：支払い方法の選択肢
-
-   ★ value に日本語や記号（「要相談」など）をそのまま書くと、
-     JavaScriptとしてエラーになりページ全体が止まります。
-     金額が決まっていない項目は priceType: 'inquiry' を使ってください。
-   ============================================================ */
 const PLAN_GROUPS = [
   {
     id: 'kani', name: '簡易イラスト', note: 'ペアのみ・商用不可',
@@ -408,8 +404,8 @@ const PLAN_GROUPS = [
     ranges: [
       { id: 'kk_icon',            name: 'アイコン',       price: 3500 },
       { id: 'kk_zenshin',         name: '全身',           price: 7500 },
-      { id: 'kk_ichimai_koshi',   name: '一枚絵　腰上',   price: 6500 },
-      { id: 'kk_ichimai_zenshin', name: '一枚絵　全身',   price: 9000 },
+      { id: 'kk_ichimai_koshi',   name: '一枚絵　腰上',   price: 5000 },
+      { id: 'kk_ichimai_zenshin', name: '一枚絵　全身',   price: 7500 },
     ]
   },
 ];
@@ -441,13 +437,11 @@ const COLOR_MODES = ['CMYK', 'RGB', '相談したい'];
 
 const PAYMENT_METHODS = [
   'つなぐ',
+  'つなぐチケット',
   '銀行振込',
   'PayPay',
 ];
-/* ============================================================
-   編集はここまで。この下は仕組みの部分なので、通常は
-   触らなくて大丈夫です。
-   ============================================================ */
+
 
 const DRAFT_KEY = 'estimate_tool_draft_v1';
 
@@ -487,6 +481,7 @@ createApp({
       paymentMethods: PAYMENT_METHODS,
       today: todayStr(),
       generating: false,
+      showPreview: false,
       activeTab: PLAN_GROUPS[0].id,
       openSections: { production: false, usage: false, rush: false },
       form: blankForm()
@@ -641,6 +636,8 @@ createApp({
     async downloadPDF(){
       if(!this.form.rangeId) return;
       this.generating = true;
+      const wasHidden = !this.showPreview;
+      if(wasHidden) this.showPreview = true;
       await this.$nextTick();
       try{
         const el = this.$refs.previewArea;
@@ -672,6 +669,7 @@ createApp({
         alert('PDFの作成に失敗しました。もう一度お試しください。');
       }finally{
         this.generating = false;
+        if(wasHidden) this.showPreview = false;
       }
     }
   },
