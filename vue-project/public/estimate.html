@@ -78,6 +78,9 @@
   .choice-btn.selected{ border-color: var(--ac); background: #FBF6EC; }
   .choice-btn.selected .price{ color: var(--ac); }
   .choice-btn:hover{ border-color: var(--ac); }
+  .choice-btn:disabled{ opacity: .4; cursor: not-allowed; background: var(--pp); }
+  .choice-btn:disabled:hover{ border-color: var(--ls); }
+  .option-hint{ grid-column: 1 / -1; margin: -4px 0 2px; font-size: 10.5px; color: var(--dg); }
 
   .qty-stepper{ display:flex; align-items:center; gap: 6px; flex-shrink: 0; }
   .qty-stepper button{
@@ -98,6 +101,11 @@
   .accordion-head .badge{ font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ac); margin-left: 8px; }
   .accordion-body{ padding: 12px; display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; }
   .accordion-body > .choice-btn{ flex: 1 1 160px; }
+  .accordion-body.cols-2{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .accordion-body.cols-2 .choice-row{ flex: none; width: 100%; }
+  @media (max-width: 520px){
+    .accordion-body.cols-2{ grid-template-columns: 1fr; }
+  }
 
   .btn-primary{
     background: var(--ik); color: #fff; border: none; padding: 11px 18px;
@@ -190,20 +198,24 @@
           <span>制作オプション<span class="badge" v-if="productionCount">（{{ productionCount }}件選択中）</span></span>
           <span class="chev">{{ openSections.production ? '▲' : '▼' }}</span>
         </button>
-        <div class="accordion-body" v-show="openSections.production">
-          <div class="choice-row" v-for="o in productionOptions" :key="o.id">
-            <button
-              class="choice-btn" :class="{selected: !!form.productionQty[o.id]}"
-              @click="toggleProduction(o.id)">
-              <span>{{ o.name }}</span>
-              <span class="price">{{ optionPriceLabel(o) }}</span>
-            </button>
-            <div class="qty-stepper" v-if="o.hasQty && form.productionQty[o.id]">
-              <button @click.stop="changeQty(o.id, -1)">−</button>
-              <span>{{ form.productionQty[o.id] }}</span>
-              <button @click.stop="changeQty(o.id, 1)">＋</button>
+        <div class="accordion-body cols-2" v-show="openSections.production">
+          <template v-for="o in productionOptions" :key="o.id">
+            <div class="choice-row">
+              <button
+                class="choice-btn" :class="{selected: !!form.productionQty[o.id]}"
+                :disabled="o.id === 'extra_person' && !canAddPerson"
+                @click="toggleProduction(o.id)">
+                <span>{{ o.name }}</span>
+                <span class="price">{{ optionPriceLabel(o) }}</span>
+              </button>
+              <div class="qty-stepper" v-if="o.hasQty && form.productionQty[o.id]">
+                <button @click.stop="changeQty(o.id, -1)">−</button>
+                <span>{{ form.productionQty[o.id] }}</span>
+                <button @click.stop="changeQty(o.id, 1)">＋</button>
+              </div>
             </div>
-          </div>
+            <p class="option-hint" v-if="o.id === 'extra_person' && !canAddPerson">簡易イラスト／描き込みアイコンでは選択できません</p>
+          </template>
         </div>
       </div>
 
@@ -404,8 +416,9 @@ const PLAN_GROUPS = [
 
 const PRODUCTION_OPTIONS = [
   { id: 'extra_person', name: '人物追加', priceType: 'percent', value: 100, hasQty: true },
-  { id: 'accessory_variations', name: '小物差分', priceType: 'fixed', value: 500 },
-  { id: 'expression', name: '表情差分', priceType: 'fixed', value: 1000 },
+  { id: 'accessory_variations', name: '小物差分', priceType: 'fixed', value: 500, hasQty: true },
+  { id: 'expression', name: '表情差分', priceType: 'fixed', value: 1000, hasQty: true },
+  { id: 'complex_accessory', name: '複雑な小物・装飾', priceType: 'fixed', value: 800, hasQty: true },
   { id: 'backgrounds', name: '背景追加', priceType: 'fixed', value: 2000 },
   { id: 'high_resolution', name: '高解像度化（2500px以上）', priceType: 'fixed', value: 1000 },
   { id: 'psd_format', name: 'PSD形式（レイヤー未統合データ）', priceType: 'fixed', value: 2000 },
@@ -486,9 +499,15 @@ createApp({
     selectedRange(){
       for(const g of this.planGroups){
         const found = g.ranges.find(r => r.id === this.form.rangeId);
-        if(found) return { ...found, groupName: g.name };
+        if(found) return { ...found, groupId: g.id, groupName: g.name };
       }
       return null;
+    },
+    canAddPerson(){
+      if(!this.selectedRange) return true;
+      if(this.selectedRange.groupId === 'kani') return false;
+      if(this.selectedRange.id === 'kk_icon') return false;
+      return true;
     },
     productionCount(){
       return Object.keys(this.form.productionQty).length;
@@ -518,19 +537,19 @@ createApp({
         const qty = this.form.productionQty[o.id];
         if(!qty) return;
         const unit = this.priceForOption(o);
-        items.push({ name: o.name + (o.hasQty ? `×${qty}` : ''), price: unit * qty });
+        items.push({ name: o.name + (o.hasQty ? `×${qty}` : ''), price: unit * qty, approx: o.id !== 'extra_person' });
       });
       this.usageOptions.forEach(o => {
         if(!this.form.usageOptionIds.includes(o.id)) return;
         if(o.priceType === 'inquiry'){
           items.push({ name: o.name, price: 0, note: '要相談' });
         }else{
-          items.push({ name: o.name, price: this.priceForOption(o) });
+          items.push({ name: o.name, price: this.priceForOption(o), approx: o.id !== 'private' });
         }
       });
       if(this.form.rushId){
         const r = this.rushOptions.find(o => o.id === this.form.rushId);
-        if(r) items.push({ name: r.name, price: this.priceForRush(r) });
+        if(r) items.push({ name: r.name, price: this.priceForRush(r), approx: true });
       }
       return items;
     },
@@ -539,6 +558,11 @@ createApp({
     }
   },
   watch: {
+    'form.rangeId'(){
+      if(!this.canAddPerson && this.form.productionQty['extra_person']){
+        delete this.form.productionQty['extra_person'];
+      }
+    },
     form: {
       deep: true,
       handler(v){
@@ -559,10 +583,11 @@ createApp({
     },
     optionPriceLabel(o){
       if(o.priceType === 'inquiry') return '要相談';
+      const tilde = (o.id === 'private' || o.id === 'extra_person') ? '' : '〜';
       if(o.priceType === 'percent'){
-        return this.selectedRange ? ('+¥' + this.priceForOption(o).toLocaleString('ja-JP')) : ('+' + o.value + '%');
+        return this.selectedRange ? ('+¥' + this.priceForOption(o).toLocaleString('ja-JP') + tilde) : ('+' + o.value + '%');
       }
-      return '+¥' + o.value.toLocaleString('ja-JP');
+      return '+¥' + o.value.toLocaleString('ja-JP') + tilde;
     },
     // 短納期対応用：プラン＋制作＋利用オプションの合計を基準に計算
     priceForRush(o){
@@ -571,11 +596,12 @@ createApp({
     },
     rushPriceLabel(o){
       if(o.priceType === 'percent'){
-        return this.baseSubtotal > 0 ? ('+¥' + this.priceForRush(o).toLocaleString('ja-JP')) : ('+' + o.value + '%');
+        return this.baseSubtotal > 0 ? ('+¥' + this.priceForRush(o).toLocaleString('ja-JP') + '〜') : ('+' + o.value + '%');
       }
-      return '+¥' + o.value.toLocaleString('ja-JP');
+      return '+¥' + o.value.toLocaleString('ja-JP') + '〜';
     },
     toggleProduction(id){
+      if(id === 'extra_person' && !this.canAddPerson) return;
       if(this.form.productionQty[id]){
         delete this.form.productionQty[id];
       }else{
