@@ -9,8 +9,8 @@
 <style>
   html{ -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   :root{
-    --pp: #EAF4FB; --cd: #FFFFFF; --ik: #1F3A52; --is: #5C7C93; --if: #9FB8C9;
-    --ln: #D7E8F2; --ls: #B9D4E3; --ac: #4FA8D8; --sel: #E6F4FB; --dg: #D9765F; --rd: 4px;
+    --pp: #F1F3ED; --cd: #FFFFFF; --ik: #26302A; --is: #6E786E; --if: #A2AB9C;
+    --ln: #E1E6DB; --ls: #CBD4C3; --ac: #A9863C; --sel: #FBF6EC; --dg: #9A4A42; --rd: 4px;
   }
   *{ box-sizing: border-box; }
   html, body{ margin:0; padding:0; }
@@ -41,7 +41,7 @@
     background: var(--ik); color: #fff; padding: 10px 16px; border-radius: var(--rd);
     margin-bottom: 16px; box-shadow: 0 3px 10px rgba(31,58,82,.25);
   }
-  .sticky-summary-label{ font-size: 12px; color: #BFDCEE; }
+  .sticky-summary-label{ font-size: 12px; color: #C9D0C3; }
   .sticky-summary-amount{ font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; }
 
   .form-card{
@@ -54,7 +54,7 @@
   .field{ display:flex; flex-direction: column; gap: 5px; }
   .field label{ font-size: 11.5px; color: var(--is); }
   .field input, .field select, .field textarea{
-    font-family: inherit; font-size: 13.5px; padding: 8px 9px;
+    font-family: inherit; font-size: 16px; padding: 8px 9px;
     border: 1px solid var(--ls); border-radius: var(--rd); background: #fff; color: var(--ik);
   }
   .field input:focus, .field select:focus, .field textarea:focus{ outline: none; border-color: var(--ac); }
@@ -121,7 +121,7 @@
     background: var(--ik); color: #fff; border: none; padding: 11px 18px;
     border-radius: var(--rd); font-size: 14px; font-weight: 500; cursor: pointer; width: 100%; margin-top: 6px;
   }
-  .btn-primary:hover{ background: #163044; }
+  .btn-primary:hover{ background: #14190f; }
   .btn-primary:disabled{ opacity: .5; cursor: default; }
   .download-row{ display: flex; gap: 8px; margin-top: 6px; }
   .download-row .btn-primary{ margin-top: 0; }
@@ -137,7 +137,7 @@
   /* ===== プレビュー（ポップアップ） ===== */
   .preview-modal{
     position: fixed; inset: 0; z-index: 100;
-    background: rgba(23, 44, 63, .55);
+    background: rgba(38, 48, 42, .55);
     display: flex; align-items: flex-start; justify-content: center;
     overflow-y: auto; padding: 24px 16px;
   }
@@ -154,7 +154,7 @@
   .preview-close:hover{ border-color: var(--ac); color: var(--ac); }
   .preview-wrap{ overflow-x: auto; }
   .preview{
-    background: #fff; color: #1F3A52; width: 210mm; min-height: 297mm;
+    background: #fff; color: #26302A; width: 210mm; min-height: 297mm;
     padding: 18mm 16mm; box-sizing: border-box; margin: 0 auto;
     box-shadow: 0 0 0 1px var(--ln); font-family: 'Zen Kaku Gothic New', sans-serif;
   }
